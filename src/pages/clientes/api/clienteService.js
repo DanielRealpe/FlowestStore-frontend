@@ -166,3 +166,36 @@ export const toggleClienteEstado = async (id, estado) => {
     throw error;
   }
 };
+
+// ✅ Login de cliente (POST)
+export const loginCliente = async (credenciales) => {
+  try {
+    const res = await axios.post(`${VITE_API_URL}/clientes/login`, credenciales);
+    // Puedes guardar el token si tu backend lo retorna
+    if (res.data.token) {
+      localStorage.setItem("token", res.data.token);
+    }
+    return res.data;
+  } catch (error) {
+    if (error.response?.data?.mensaje) {
+      error.message = error.response.data.mensaje;
+    }
+    throw error;
+  }
+};
+
+// ✅ Registro de cliente (POST)
+export const registerCliente = async (clienteData) => {
+  try {
+    const res = await axios.post(
+      `${VITE_API_URL}/clientes/registro`,
+      clienteData
+    );
+    return res.data;
+  } catch (error) {
+    if (error.response?.data?.mensaje) {
+      error.message = error.response.data.mensaje;
+    }
+    throw error;
+  }
+};

@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { X, Save, User, Mail, Phone, MapPin, CheckCircle, AlertCircle } from "lucide-react"
+import { X, Save, User, Mail, Phone, MapPin, CheckCircle, AlertCircle, Lock } from "lucide-react"
 import { createCliente, updateCliente } from "../api/clienteService"
 import FormField from "./form/FormField"
 import SelectField from "./form/SelectField"
@@ -10,12 +10,12 @@ import { toast } from "react-toastify" // Importar toast
 const ClienteForm = ({ cliente, onClose, onSave }) => {
   const initialFormData = {
     nombreCompleto: "",
-    tipoDocumento: "cc", // Cambiado a minúsculas para coincidir con el backend
+    tipoDocumento: "cc",
     documentoIdentidad: "",
     correoElectronico: "",
     telefono: "",
     direccion: "",
-    genero: "masculino",
+    password: "", // Añadido
     estado: "activo",
   }
 
@@ -29,13 +29,11 @@ const ClienteForm = ({ cliente, onClose, onSave }) => {
 
   useEffect(() => {
     if (cliente) {
-      // Mapear los valores del cliente a los valores esperados por el backend
       let tipoDoc = cliente.tipoDocumento || "cc"
-      // Convertir valores antiguos a nuevos si es necesario
       if (tipoDoc === "CC") tipoDoc = "cc"
       if (tipoDoc === "TI") tipoDoc = "tarjeta identidad"
       if (tipoDoc === "Pasaporte") tipoDoc = "passport"
-      if (tipoDoc === "CE") tipoDoc = "cc" // Fallback a cc si es CE
+      if (tipoDoc === "CE") tipoDoc = "cc"
 
       setFormData({
         nombreCompleto: cliente.nombreCompleto || "",
@@ -44,7 +42,7 @@ const ClienteForm = ({ cliente, onClose, onSave }) => {
         correoElectronico: cliente.correoElectronico || "",
         telefono: cliente.telefono || "",
         direccion: cliente.direccion || "",
-        genero: cliente.genero || "masculino",
+        password: "", // Vacío al editar
         estado: cliente.estado || "activo",
       })
     }
@@ -106,18 +104,17 @@ const ClienteForm = ({ cliente, onClose, onSave }) => {
       if (value.trim().length > 200) return "La dirección debe tener máximo 200 caracteres"
       return ""
     },
-    genero: (value) => {
-      if (!value) return "El género es obligatorio"
-      if (!["masculino", "femenino", "0tro"].includes(value)) {
-        return "El género debe ser masculino, femenino u 0tro"
-      }
-      return ""
-    },
     tipoDocumento: (value) => {
       if (!value) return "El tipo de documento es obligatorio"
       if (!["cc", "tarjeta identidad", "passport"].includes(value)) {
         return "El tipo de documento debe ser cc, tarjeta identidad o passport"
       }
+      return ""
+    },
+    password: (value) => {
+      // Solo validar si es registro o si el usuario escribió algo al editar
+      if (!cliente && !value.trim()) return "La contraseña es obligatoria"
+      if (value && value.length < 6) return "La contraseña debe tener al menos 6 caracteres"
       return ""
     },
   }
@@ -126,8 +123,8 @@ const ClienteForm = ({ cliente, onClose, onSave }) => {
     const newErrors = {}
     const fieldsToValidate =
       currentStep === 1
-        ? ["nombreCompleto", "tipoDocumento", "documentoIdentidad", "correoElectronico"]
-        : ["telefono", "direccion", "genero"]
+        ? ["nombreCompleto", "tipoDocumento", "documentoIdentidad", "correoElectronico", "password"]
+        : ["telefono", "direccion"] // genero eliminado
 
     fieldsToValidate.forEach((field) => {
       if (validations[field]) {
@@ -166,14 +163,19 @@ const ClienteForm = ({ cliente, onClose, onSave }) => {
     setSubmitError("")
 
     try {
-      let savedCliente;
+      let savedCliente
+      let dataToSend = { ...formData }
+      if (cliente && !formData.password) {
+        // Si está editando y no escribió password, no lo envíes
+        delete dataToSend.password
+      }
       if (cliente) {
-        savedCliente = await updateCliente(cliente.id, formData)
+        savedCliente = await updateCliente(cliente.id, dataToSend)
         // Toast para actualización exitosa
         toast.success(`Cliente ${formData.nombreCompleto} actualizado exitosamente`)
       } else {
         console.log("Datos enviados:", formData)
-        savedCliente = await createCliente(formData)
+        savedCliente = await createCliente(dataToSend)
         // Toast para creación exitosa
         toast.success(`Cliente ${formData.nombreCompleto} registrado exitosamente`)
       }
@@ -255,6 +257,18 @@ const ClienteForm = ({ cliente, onClose, onSave }) => {
         error: errors.correoElectronico,
         icon: <Mail size={18} className="text-orange-400" />,
       },
+      {
+        type: "password",
+        name: "password",
+        label: "Contraseña",
+        value: formData.password,
+        error: errors.password,
+        icon: <Lock size={18} className="text-orange-400" />,
+        placeholder: cliente
+          ? "Dejar en blanco para mantener la contraseña actual"
+          : "Mínimo 6 caracteres",
+        autoComplete: "new-password",
+      },
     ],
     2: [
       {
@@ -275,18 +289,6 @@ const ClienteForm = ({ cliente, onClose, onSave }) => {
         value: formData.direccion,
         error: errors.direccion,
         icon: <MapPin size={18} className="text-orange-400" />,
-      },
-      {
-        type: "select",
-        name: "genero",
-        label: "Género",
-        value: formData.genero,
-        error: errors.genero,
-        options: [
-          { value: "masculino", label: "Masculino" },
-          { value: "femenino", label: "Femenino" },
-          { value: "0tro", label: "Otro" }, // Nota: Usando "0tro" con un cero como está en el backend
-        ],
       },
       {
         type: "select",

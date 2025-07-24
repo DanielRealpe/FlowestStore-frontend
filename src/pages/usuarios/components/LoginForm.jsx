@@ -1,9 +1,11 @@
 "use client"
 
-import { useState } from "react"
-import { Mail, Lock, AlertCircle } from "lucide-react"
+import { useEffect, useState } from "react"
+import { Home as HomeIcon, Mail, Lock, AlertCircle } from "lucide-react"
 import { useAuth } from "../context/AuthContext"
 import RecuperarPasswordModal from "../modals/RecuperarPasswordModal"
+import { useNavigate } from "react-router-dom"
+import { loginCliente } from "../../clientes/api/clienteService"
 
 const LoginForm = () => {
   const { signin, loading, errors } = useAuth()
@@ -12,6 +14,16 @@ const LoginForm = () => {
     password: "",
   })
   const [showRecuperarModal, setShowRecuperarModal] = useState(false)
+  const [localError, setLocalError] = useState("")
+  const navigate = useNavigate()
+
+  // Limpiar errores al montar el formulario
+  useEffect(() => {
+    setLocalError("")
+    // Si tienes un método para limpiar errores globales, agrégalo aquí
+    // Por ejemplo: clearErrors && clearErrors()
+    // Si errors es un estado, podrías hacer: setErrors && setErrors([])
+  }, [])
 
   const handleChange = (e) => {
     const { name, value } = e.target
@@ -19,15 +31,37 @@ const LoginForm = () => {
       ...prev,
       [name]: value,
     }))
+    setLocalError("")
   }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
+    setLocalError("")
     try {
-      console.log("Enviando credenciales:", formData)
-      await signin(formData)
+      // Intentar login como usuario (admin)
+      const user = await signin(formData)
+      if (user && user.rol) {
+        localStorage.setItem("tipo", "usuario")
+        navigate("/dashboard")
+        return
+      }
     } catch (err) {
-      console.error("Error en el formulario:", err)
+      // Si falla, intenta login como cliente
+      try {
+        const cliente = await loginCliente({
+          correoElectronico: formData.email,
+          password: formData.password,
+        })
+        if (cliente) {
+          localStorage.setItem("tipo", "cliente")
+          navigate("/")
+          return
+        } else {
+          setLocalError("Correo o contraseña incorrectos")
+        }
+      } catch (err2) {
+        setLocalError("Correo o contraseña incorrectos")
+      }
     }
   }
 
@@ -39,10 +73,16 @@ const LoginForm = () => {
           <p className="text-gray-400">Ingresa tus credenciales para acceder</p>
         </div>
 
-        {errors && errors.length > 0 && (
+        {(errors && errors.length > 0) && (
           <div className="bg-red-900 text-white p-3 rounded-lg mb-6 flex items-center">
             <AlertCircle className="h-5 w-5 mr-2" />
             {errors[0]}
+          </div>
+        )}
+        {localError && (
+          <div className="bg-red-900 text-white p-3 rounded-lg mb-6 flex items-center">
+            <AlertCircle className="h-5 w-5 mr-2" />
+            {localError}
           </div>
         )}
 
@@ -142,6 +182,31 @@ const LoginForm = () => {
             </button>
           </div>
         </form>
+
+        {/* Botón para registrarse */}
+        <div className="mt-4 flex justify-center">
+          <button
+            type="button"
+            onClick={() => navigate("/register")}
+            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-800 text-gray-100 hover:bg-blue-700 transition text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500"
+            aria-label="Registrarse"
+          >
+            ¿No tienes cuenta? Regístrate
+          </button>
+        </div>
+
+        {/* Botón para volver a Home */}
+        <div className="mt-6 flex justify-center">
+          <button
+            type="button"
+            onClick={() => navigate("/")}
+            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gray-800 text-gray-300 hover:bg-gray-700 hover:text-white transition text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500"
+            aria-label="Volver a inicio"
+          >
+            <HomeIcon className="h-5 w-5" />
+            Volver a inicio
+          </button>
+        </div>
       </div>
 
       {/* Modal de recuperación de contraseña */}

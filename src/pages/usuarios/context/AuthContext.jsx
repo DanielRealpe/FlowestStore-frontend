@@ -2,6 +2,7 @@
 
 import { createContext, useState, useEffect, useContext, useRef } from "react"
 import { getUsuarioAutenticado, loginUsuario, logoutUsuario, obtenerPermisosUsuario } from "../api/usuarioService"
+import { loginCliente } from "../../clientes/api/clienteService"
 
 // 1. Create the context
 const AuthContext = createContext(null)
@@ -13,6 +14,7 @@ export function AuthProvider({ children }) {
   const [errors, setErrors] = useState([])
   const [loading, setLoading] = useState(false)
   const [isLoadingAuth, setIsLoadingAuth] = useState(true)
+  const [tipo, setTipo] = useState(null) // "usuario" o "cliente"
   const [permisos, setPermisos] = useState([])
 
   // Usar una referencia para evitar múltiples cargas de permisos
@@ -28,45 +30,31 @@ export function AuthProvider({ children }) {
     } else {
       console.log(`Ya estamos en la ruta: ${path}, evitando redirección`)
     }
+    setErrors([])
   }
 
-  // Load user permissions
+  // Cargar permisos solo para usuarios (no clientes)
   const loadUserPermissions = async () => {
+    // Only try to load permissions if the user is authenticated
+    if (!isAuthenticated || !user || tipo !== "usuario") {
+      console.log("No se cargan permisos porque el usuario no está autenticado o no es un usuario")
+      return []
+    }
+
+    // Evitar cargar permisos múltiples veces
+    if (permisosLoaded.current) {
+      console.log("Permisos ya cargados, evitando carga duplicada")
+      return permisos
+    }
+
     try {
-      // Only try to load permissions if the user is authenticated
-      if (!isAuthenticated || !user) {
-        console.log("No se cargan permisos porque el usuario no está autenticado")
-        return []
-      }
-
-      // Evitar cargar permisos múltiples veces
-      if (permisosLoaded.current) {
-        console.log("Permisos ya cargados, evitando carga duplicada")
-        return permisos
-      }
-
       console.log("Cargando permisos para el usuario:", user.id)
       const permisosData = await obtenerPermisosUsuario()
       const permisosArray = permisosData.permisos || []
 
       console.log("Permisos cargados:", permisosArray, "Fuente:", permisosData.source || "desconocida")
 
-      // Asegurarse de que todos los módulos tengan al menos permiso de "ver"
-      // const modulosBasicos = ["no"]
-      const permisosCompletos = [...permisosArray]
-
-      // Añadir permisos de "ver" para módulos básicos si no existen
-      // modulosBasicos.forEach((modulo) => {
-      //   const tienePermisoVer = permisosArray.some(
-      //     (p) => (typeof p === "string" && p === modulo) || (p.recurso === modulo && p.accion === "ver"),
-      //   )
-
-      //   if (!tienePermisoVer) {
-      //     permisosCompletos.push({ recurso: modulo, accion: "ver" })
-      //   }
-      // })
-
-      setPermisos(permisosCompletos)
+      setPermisos(permisosArray)
 
       // Marcar que los permisos ya se cargaron
       permisosLoaded.current = true
@@ -74,26 +62,18 @@ export function AuthProvider({ children }) {
       // Update user with permissions
       setUser((prev) => {
         if (!prev) return prev
-        return { ...prev, permisos: permisosCompletos }
+        return { ...prev, permisos: permisosArray }
       })
 
-      return permisosCompletos
+      return permisosArray
     } catch (error) {
       console.error("Error al cargar permisos:", error)
-      // En caso de error, establecer permisos básicos en lugar de un array vacío
-      const permisosBasicos = [
-        { recurso: "productos", accion: "ver" },
-        { recurso: "categorias", accion: "ver" },
-        { recurso: "ventas", accion: "ver" },
-        { recurso: "pedidos", accion: "ver" },
-        { recurso: "clientes", accion: "ver" },
-      ]
-      setPermisos(permisosBasicos)
+      setPermisos([])
 
       // Marcar que los permisos ya se cargaron (aunque sean básicos)
       permisosLoaded.current = true
 
-      return permisosBasicos
+      return []
     }
   }
 
@@ -111,38 +91,63 @@ export function AuthProvider({ children }) {
         // Try to get user from localStorage first for immediate UI
         const storedUser = localStorage.getItem("user")
         const storedToken = localStorage.getItem("token")
-
-        if (storedUser && storedToken) {
-          const parsedUser = JSON.parse(storedUser)
-          setUser(parsedUser)
+        const storedTipo = localStorage.getItem("tipo")
+        
+        if (storedUser && storedToken && storedTipo) {
+          setUser(JSON.parse(storedUser))
           setIsAuthenticated(true)
+          setTipo(storedTipo)
 
-          // Try to verify with the server only if there's a token
-          try {
-            const userData = await getUsuarioAutenticado()
-            if (userData) {
-              setUser(userData)
-              localStorage.setItem("user", JSON.stringify(userData))
+          // Si es un usuario, verificar con el servidor y cargar permisos
+          if (storedTipo === "usuario") {
+            try {
+              const userData = await getUsuarioAutenticado()
+              if (userData) {
+                setUser(userData)
+                localStorage.setItem("user", JSON.stringify(userData))
 
-              // Load user permissions
-              await loadUserPermissions()
+                // Load user permissions
+                await loadUserPermissions()
+              }
+            } catch (serverError) {
+              console.log("Error al verificar con el servidor, usando datos almacenados:", serverError.message)
             }
-          } catch (serverError) {
-            console.log("Error al verificar con el servidor, usando datos almacenados:", serverError.message)
-            // If server verification fails but we have local data, keep using that
-          }
 
-          // Redirect to dashboard if on login and authenticated
-          if (window.location.pathname === "/login") {
-            navigateTo("/dashboard")
+            // Redirect to dashboard if on login and authenticated
+            if (window.location.pathname === "/login") {
+              navigateTo("/dashboard")
+            }
+          } else if (storedTipo === "cliente") {
+            try {
+              const userData = await getUsuarioAutenticado()
+              if (userData) {
+                setUser(userData)
+                localStorage.setItem("user", JSON.stringify(userData))
+
+                // Load user permissions
+                await loadUserPermissions()
+              }
+            } catch (serverError) {
+              console.log("Error al verificar con el servidor, usando datos almacenados:", serverError.message)
+            }
+
+            // Redirect to dashboard if on login and authenticated
+            if (window.location.pathname === "/login" || window.location.pathname === "/registro") {
+              navigateTo("/")
+            }
           }
         } else {
           // If no data in localStorage, user is not authenticated
           setUser(null)
           setIsAuthenticated(false)
+          setTipo(null)
+          localStorage.removeItem("user")
+          localStorage.removeItem("token")
+          localStorage.removeItem("tipo")
 
-          // If not on login and not authenticated, redirect to login
-          if (!window.location.pathname.includes("/login")) {
+          // Permitir acceso público a "/" y "/login"
+          const publicRoutes = ["/", "/login"];
+          if (!publicRoutes.includes(window.location.pathname)) {
             navigateTo("/login")
           }
         }
@@ -150,8 +155,10 @@ export function AuthProvider({ children }) {
         console.error("Error al verificar autenticación:", error)
         setUser(null)
         setIsAuthenticated(false)
+        setTipo(null)
         localStorage.removeItem("user")
         localStorage.removeItem("token")
+        localStorage.removeItem("tipo")
 
         // If not on login and there's an error, redirect to login
         if (!window.location.pathname.includes("/login")) {
@@ -166,36 +173,68 @@ export function AuthProvider({ children }) {
     }
 
     checkAuth()
+    setErrors([])
   }, [])
 
-  // Function to sign in
+  // Login para usuario o cliente
   const signin = async (credentials) => {
     setLoading(true)
     setErrors([])
     try {
-      // Login and get token and user data
-      const response = await loginUsuario(credentials)
-      console.log("Respuesta de login:", response)
+      // Intentar login como usuario
+      try {
+        const response = await loginUsuario(credentials)
+        console.log("Respuesta de login como usuario:", response)
 
-      if (response.token) {
-        localStorage.setItem("token", response.token)
-      }
+        if (response.token) {
+          localStorage.setItem("token", response.token)
+        }
 
-      if (response.usuario) {
-        setUser(response.usuario)
-        setIsAuthenticated(true)
-        localStorage.setItem("user", JSON.stringify(response.usuario))
+        if (response.usuario) {
+          setUser(response.usuario)
+          setIsAuthenticated(true)
+          setTipo("usuario")
+          localStorage.setItem("user", JSON.stringify(response.usuario))
+          localStorage.setItem("tipo", "usuario")
 
-        // Resetear el estado de carga de permisos
-        permisosLoaded.current = false
+          // Resetear el estado de carga de permisos
+          permisosLoaded.current = false
 
-        // Load user permissions
-        await loadUserPermissions()
+          // Load user permissions
+          await loadUserPermissions()
 
-        navigateTo("/dashboard")
-        return response
-      } else {
-        throw new Error("No se recibieron datos de usuario")
+          navigateTo("/dashboard")
+          return response
+        } else {
+          throw new Error("No se recibieron datos de usuario")
+        }
+      } catch (err) {
+        // Si falla, intentar login como cliente
+        try {
+          const cliente = await loginCliente({
+            correoElectronico: credentials.email,
+            password: credentials.password,
+          })
+          console.log("Respuesta de login como cliente:", cliente)
+
+          if (cliente && cliente.cliente) {
+            setUser(cliente.cliente)
+            setIsAuthenticated(true)
+            setTipo("cliente")
+            localStorage.setItem("user", JSON.stringify(cliente.cliente))
+            localStorage.setItem("tipo", "cliente")
+
+            navigateTo("/")
+            return cliente
+          } else {
+            throw new Error("Correo o contraseña incorrectos")
+          }
+        } catch (err2) {
+          setErrors([err2.message || "Correo o contraseña incorrectos"])
+          setIsAuthenticated(false)
+          setTipo(null)
+          throw err2
+        }
       }
     } catch (error) {
       console.error("Error al iniciar sesión:", error)
@@ -207,35 +246,48 @@ export function AuthProvider({ children }) {
     }
   }
 
-  // Function to sign out
+  // Logout reutilizable para ambos tipos
   const signout = async () => {
     try {
-      await logoutUsuario()
+      if (tipo === "usuario") {
+        await logoutUsuario()
+      }
       setUser(null)
       setIsAuthenticated(false)
+      setTipo(null)
       setPermisos([])
       localStorage.removeItem("user")
       localStorage.removeItem("token")
+      localStorage.removeItem("tipo")
 
       // Resetear los estados de referencia
       permisosLoaded.current = false
       authCheckComplete.current = false
-
-      navigateTo("/login")
+      if(tipo === "usuario") {
+        navigateTo("/login")
+      } else if (tipo === "cliente") {
+        navigateTo("/")
+      }
     } catch (error) {
       console.error("Error al cerrar sesión:", error)
       // Clean data anyway
       setUser(null)
       setIsAuthenticated(false)
+      setTipo(null)
       setPermisos([])
       localStorage.removeItem("user")
       localStorage.removeItem("token")
+      localStorage.removeItem("tipo")
 
       // Resetear los estados de referencia
       permisosLoaded.current = false
       authCheckComplete.current = false
 
-      navigateTo("/login")
+      if(tipo === "usuario") {
+        navigateTo("/login")
+      } else if (tipo === "cliente") {
+        navigateTo("/")
+      }
     }
   }
 
@@ -296,6 +348,7 @@ export function AuthProvider({ children }) {
         isLoadingAuth,
         loading,
         errors,
+        tipo,
         signin,
         signout,
         hasRole,

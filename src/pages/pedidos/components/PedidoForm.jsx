@@ -1,6 +1,4 @@
-"use client"
-
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { X, ShoppingBag, Plus, Minus, Trash2 } from "lucide-react"
 import { createPedido, updatePedido, fetchClientesPedidos, fetchProductos } from "../api/pedidoservice.js"
 import { toast } from "react-toastify"
@@ -24,6 +22,10 @@ const PedidoForm = ({ pedido, onClose, onSave }) => {
   const [loading, setLoading] = useState(true)
   const [currentProducto, setCurrentProducto] = useState("")
   const [currentCantidad, setCurrentCantidad] = useState(1)
+  const [clienteSearch, setClienteSearch] = useState("")
+  const [showClienteDropdown, setShowClienteDropdown] = useState(false)
+  const clienteInputRef = useRef(null)
+  const clienteDropdownRef = useRef(null)
 
   // Cargar datos iniciales
   useEffect(() => {
@@ -192,7 +194,7 @@ const PedidoForm = ({ pedido, onClose, onSave }) => {
 
   // Validaciones de formulario
   const validations = {
-    id_cliente: (value) => (!value ? "El cliente es obligatorio" : ""),
+    // id_cliente: (value) => (!value ? "El cliente es obligatorio" : ""),
     
     productos: (array) => (array.length === 0 ? "Debe agregar al menos un producto" : ""),
   }
@@ -219,9 +221,35 @@ const PedidoForm = ({ pedido, onClose, onSave }) => {
     setSubmitError("")
 
     try {
+      // Buscar si el cliente existe por id_cliente
+      const clienteSeleccionado = clientes.find(
+        (c) => c.id.toString() === formData.id_cliente
+      )
+
+      // Si no existe, buscar si el texto ingresado es un documento válido no encontrado
+      let id_cliente = null
+      let documentoIdentidad = null
+
+      if (clienteSeleccionado) {
+        id_cliente = Number.parseInt(formData.id_cliente)
+      } else {
+        // Intentar extraer el documento del input de búsqueda
+        // Si el usuario seleccionó de la lista, clienteSearch tendrá "Nombre (Documento)"
+        // Si no, puede haber escrito solo el documento
+        // Extraer el documento si está entre paréntesis
+        const match = clienteSearch.match(/\(([^)]+)\)$/)
+        if (match) {
+          documentoIdentidad = match[1]
+        } else {
+          // Si no hay paréntesis, usar el texto completo como documento
+          documentoIdentidad = clienteSearch.trim()
+        }
+      }
+
       // Preparar datos para enviar
       const pedidoData = {
-        id_cliente: Number.parseInt(formData.id_cliente),
+        id_cliente: id_cliente,
+        documentoIdentidad: id_cliente ? undefined : documentoIdentidad,
         direccion_envio: formData.direccion_envio,
         total: calcularTotal(),
         productos: formData.productos.map((item) => {
@@ -230,14 +258,16 @@ const PedidoForm = ({ pedido, onClose, onSave }) => {
             cantidad: item.cantidad,
             precio_unitario: item.precio_unitario,
           }
-
-          // Si estamos editando un pedido y el producto tiene un id de relación, incluirlo
           if (pedido && item.id) {
             productoData.id = item.id
           }
           return productoData
         }),
       }
+
+      // Elimina el campo documentoIdentidad si no aplica
+      if (id_cliente) delete pedidoData.documentoIdentidad
+
       console.log("pedidoData: ", pedidoData)
 
       let respuesta
@@ -249,10 +279,8 @@ const PedidoForm = ({ pedido, onClose, onSave }) => {
         toast.success("Pedido creado exitosamente")
       }
 
-      // Pasar la respuesta al componente padre para que actualice la lista correctamente
       onSave(respuesta)
     } catch (error) {
-    
       const errorMessage = error.message || "Error al guardar el pedido"
       setSubmitError(errorMessage)
       toast.error(`Error: ${errorMessage}`)
@@ -266,6 +294,24 @@ const PedidoForm = ({ pedido, onClose, onSave }) => {
     return valor.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".")
   }
 
+  // Cerrar dropdown si se hace click fuera
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (
+        clienteDropdownRef.current &&
+        !clienteDropdownRef.current.contains(event.target) &&
+        clienteInputRef.current &&
+        !clienteInputRef.current.contains(event.target)
+      ) {
+        setShowClienteDropdown(false)
+      }
+    }
+    if (showClienteDropdown) {
+      document.addEventListener("mousedown", handleClickOutside)
+    }
+    return () => document.removeEventListener("mousedown", handleClickOutside)
+  }, [showClienteDropdown])
+
   if (loading) {
     return (
       <div className="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm flex items-center justify-center z-50">
@@ -276,6 +322,23 @@ const PedidoForm = ({ pedido, onClose, onSave }) => {
         </div>
       </div>
     )
+  }
+
+  // Filtrar clientes por nombre o documento
+  const filteredClientes = clientes.filter((cliente) => {
+    const search = clienteSearch.toLowerCase()
+    return (
+      cliente.nombreCompleto?.toLowerCase().includes(search) ||
+      cliente.documentoIdentidad?.toLowerCase().includes(search)
+    )
+  })
+
+  // Manejar selección de cliente
+  const handleClienteSelect = (cliente) => {
+    setFormData((prev) => ({ ...prev, id_cliente: cliente.id.toString() }))
+    setClienteSearch(cliente.nombreCompleto + (cliente.documentoIdentidad ? ` (${cliente.documentoIdentidad})` : ""))
+    setShowClienteDropdown(false)
+    if (errors.id_cliente) setErrors((prev) => ({ ...prev, id_cliente: "" }))
   }
 
   return (
@@ -303,22 +366,53 @@ const PedidoForm = ({ pedido, onClose, onSave }) => {
           )}
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-            {/* Cliente */}
-            <SelectField
-              name="id_cliente"
-              label="Cliente"
-              value={formData.id_cliente}
-              options={[
-                { value: "", label: "Seleccionar cliente" },
-                ...clientes.map((cliente) => ({
-                  value: cliente.id.toString(),
-                  label: cliente.nombreCompleto,
-                })),
-              ]}
-              onChange={handleChange}
-              error={errors.id_cliente}
-              className={errors.id_cliente ? "border-red-500" : ""}
-            />
+            {/* Cliente con input de búsqueda */}
+            <div className="mb-4 relative">
+              <label className="block text-gray-300 mb-1.5 font-medium text-sm">Cliente</label>
+              <input
+                ref={clienteInputRef}
+                type="text"
+                value={
+                  formData.id_cliente && !clienteSearch
+                    ? (clientes.find(c => c.id.toString() === formData.id_cliente)?.nombreCompleto || "")
+                    : clienteSearch
+                }
+                onChange={e => {
+                  setClienteSearch(e.target.value)
+                  setShowClienteDropdown(true)
+                  setFormData(prev => ({ ...prev, id_cliente: "" }))
+                }}
+                onFocus={() => setShowClienteDropdown(true)}
+                placeholder="Buscar por nombre o documento..."
+                className={`w-full bg-gray-800 text-white border ${errors.id_cliente ? "border-red-500" : "border-gray-700"} rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-orange-500 transition-all duration-200 text-sm`}
+                autoComplete="off"
+              />
+              {showClienteDropdown && filteredClientes.length > 0 && (
+                <ul
+                  ref={clienteDropdownRef}
+                  className="absolute z-30 bg-gray-900 border border-gray-700 rounded-lg mt-1 w-full max-h-56 overflow-auto shadow-lg"
+                >
+                  {filteredClientes.slice(0, 20).map(cliente => (
+                    <li
+                      key={cliente.id}
+                      className="px-4 py-2 cursor-pointer hover:bg-orange-600 hover:text-white transition"
+                      onClick={() => handleClienteSelect(cliente)}
+                    >
+                      <span className="font-medium">{cliente.nombreCompleto}</span>
+                      {cliente.documentoIdentidad && (
+                        <span className="ml-2 text-xs text-gray-400">({cliente.documentoIdentidad})</span>
+                      )}
+                    </li>
+                  ))}
+                  {filteredClientes.length > 20 && (
+                    <li className="px-4 py-2 text-xs text-gray-400">Mostrando primeros 20 resultados...</li>
+                  )}
+                </ul>
+              )}
+              {errors.id_cliente && (
+                <div className="text-red-400 text-xs mt-1">{errors.id_cliente}</div>
+              )}
+            </div>
 
             {/* Dirección de envío */}
             <FormField

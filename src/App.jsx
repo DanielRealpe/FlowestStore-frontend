@@ -27,6 +27,8 @@ import "./App.css"
 import ProtectedRoute from "./pages/usuarios/components/ProtectedRoute"
 import Inventory from "./pages/inventory/inventory"
 import Welcome from "./pages/welcome/welcome"
+import { ThemeProvider, useTheme } from "./components/layout/ThemeContext.jsx"
+import UserProfile from "./pages/perfile/user-profile.js"
 
 // Componente para proteger rutas
 const ProtectedRouteWrapper = ({ children, requiredPermission, requiredRole, allowedTypes = ["usuario"] }) => {
@@ -59,11 +61,13 @@ const ProtectedRouteWrapper = ({ children, requiredPermission, requiredRole, all
 export function App() {
   return (
     <Router>
-      <AuthProvider>
-        <SidebarProvider>
-          <AppContent />
-        </SidebarProvider>
-      </AuthProvider>
+      <ThemeProvider>
+        <AuthProvider>
+          <SidebarProvider>
+            <AppContent />
+          </SidebarProvider>
+        </AuthProvider>
+      </ThemeProvider>
     </Router>
   )
 }
@@ -72,6 +76,7 @@ function AppContent() {
   const { isExpanded } = useSidebar()
   const { isAuthenticated, isLoadingAuth, tipo } = useAuth()
   const [initialized, setInitialized] = useState(false)
+  const { darkMode } = useTheme() // Añade esta línea para usar el tema
 
   useEffect(() => {
     // Solo actualizar el estado cuando la carga de autenticación ha terminado
@@ -89,10 +94,22 @@ function AppContent() {
     <div className="flex h-screen">
       {(isAuthenticated && tipo === "usuario" && window.location.pathname !== "/") && <Sidebar />}
       <main
-        className={`flex-1 ${(isAuthenticated && tipo === "usuario" && window.location.pathname !== "/") ? (isExpanded ? "ml-64" : "ml-20") : ""} overflow-y-auto transition-all duration-300`}
+        className={`flex-1 ${
+          (isAuthenticated && tipo === "usuario" && window.location.pathname !== "/") 
+            ? (isExpanded ? "ml-64" : "ml-20") 
+            : ""
+        } overflow-y-auto transition-all duration-300 ${
+          darkMode 
+            ? 'bg-gray-800 border-gray-700 text-white' 
+            : 'bg-white border-slate-200 text-slate-900'
+        }`}
       >
         {(isAuthenticated && tipo === "usuario" && window.location.pathname !== "/") && <Navbar />}
-        <div className={`${(isAuthenticated && tipo === "usuario" && window.location.pathname !== "/") ? "p-4 pt-20" : ""}`}>
+        <div className={`${
+          (isAuthenticated && tipo === "usuario" && window.location.pathname !== "/") 
+            ? "p-4 pt-20" 
+            : ""
+        }`}>
           <Routes>
             {/* Página principal siempre muestra Home */}
             <Route path="/" element={<Home />} />
@@ -166,10 +183,10 @@ function AppContent() {
               }
             />
             <Route
-              path="/inventory"
+              path="/perfil"
               element={
-                <ProtectedRouteWrapper requiredPermission="inventario.ver " allowedTypes={["usuario"]}>
-                  <Inventory />
+                <ProtectedRouteWrapper allowedTypes={["usuario"]}>
+                  <UserProfile />
                 </ProtectedRouteWrapper>
               }
             />
@@ -188,7 +205,6 @@ function AppContent() {
           </Routes>
         </div>
 
-        {/* 🔔 Contenedor global para notificaciones */}
         <ToastContainer
           position="top-right"
           autoClose={3000}
@@ -196,7 +212,7 @@ function AppContent() {
           newestOnTop
           closeOnClick
           pauseOnHover
-          theme="dark"
+          theme={darkMode ? "dark" : "light"}
         />
       </main>
     </div>

@@ -42,7 +42,7 @@ export default function ClientLayout({ children }) {
     <html lang="en">
       <body>
         <SidebarProvider>
-          <div className="flex min-h-screen bg-gray-50">
+          <div className="flex min-h-screen bg-gradient-to-br from-slate-100 to-slate-100">
             <Sidebar
               user={user}
               isAuthenticated={true}
@@ -54,8 +54,12 @@ export default function ClientLayout({ children }) {
             />
             <div className="flex-1 transition-all duration-300 ml-64 sidebar-expanded:ml-64 sidebar-collapsed:ml-20">
               <Navbar user={user} onLogout={handleLogout} onNavigateToProfile={handleNavigateToProfile} />
-              <main className="pt-16 p-6">
-                <div className="max-w-7xl mx-auto">{children}</div>
+              <main className="pt-20 p-6">
+                <div className="max-w-7xl mx-auto">
+                  <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 min-h-[calc(100vh-8rem)]">
+                    {children}
+                  </div>
+                </div>
               </main>
             </div>
           </div>

@@ -5,9 +5,12 @@ import { X, Save, User, Mail, Phone, MapPin, CheckCircle, AlertCircle, Lock } fr
 import { createCliente, updateCliente } from "../api/clienteService"
 import FormField from "./form/FormField"
 import SelectField from "./form/SelectField"
-import { toast } from "react-toastify" // Importar toast
+import { toast } from "react-toastify"
+import { useTheme } from "../../../components/layout/ThemeContext.jsx" // Ajusta la ruta según tu estructura
 
 const ClienteForm = ({ cliente, onClose, onSave }) => {
+  const { darkMode } = useTheme()
+  
   const initialFormData = {
     nombreCompleto: "",
     tipoDocumento: "cc",
@@ -15,7 +18,7 @@ const ClienteForm = ({ cliente, onClose, onSave }) => {
     correoElectronico: "",
     telefono: "",
     direccion: "",
-    password: "", // Añadido
+    password: "",
     estado: "activo",
   }
 
@@ -42,7 +45,7 @@ const ClienteForm = ({ cliente, onClose, onSave }) => {
         correoElectronico: cliente.correoElectronico || "",
         telefono: cliente.telefono || "",
         direccion: cliente.direccion || "",
-        password: "", // Vacío al editar
+        password: "",
         estado: cliente.estado || "activo",
       })
     }
@@ -51,18 +54,16 @@ const ClienteForm = ({ cliente, onClose, onSave }) => {
   const handleChange = (e) => {
     const { name, value } = e.target
 
-    // Validación específica para campos numéricos
     if (name === "telefono" && !/^\d*$/.test(value)) {
-      return // No actualizar si no son solo números
+      return
     }
 
-    // Limitar longitud para documentoIdentidad y teléfono
     if (name === "documentoIdentidad" && value.length > 10) {
-      return // No permitir más de 10 caracteres
+      return
     }
 
     if (name === "telefono" && value.length > 10) {
-      return // No permitir más de 10 caracteres
+      return
     }
 
     setFormData((prev) => ({ ...prev, [name]: value }))
@@ -112,7 +113,6 @@ const ClienteForm = ({ cliente, onClose, onSave }) => {
       return ""
     },
     password: (value) => {
-      // Solo validar si es registro o si el usuario escribió algo al editar
       if (!cliente && !value.trim()) return "La contraseña es obligatoria"
       if (value && value.length < 6) return "La contraseña debe tener al menos 6 caracteres"
       return ""
@@ -124,7 +124,7 @@ const ClienteForm = ({ cliente, onClose, onSave }) => {
     const fieldsToValidate =
       currentStep === 1
         ? ["nombreCompleto", "tipoDocumento", "documentoIdentidad", "correoElectronico", "password"]
-        : ["telefono", "direccion"] // genero eliminado
+        : ["telefono", "direccion"]
 
     fieldsToValidate.forEach((field) => {
       if (validations[field]) {
@@ -147,14 +147,12 @@ const ClienteForm = ({ cliente, onClose, onSave }) => {
     return Object.keys(newErrors).length === 0
   }
 
-  // Función para enviar el formulario - solo se llama en el último paso
   const submitForm = async () => {
     if (formSubmitted) return
     setFormSubmitted(true)
 
     if (!validateForm()) {
       setFormSubmitted(false)
-      // Mostrar notificación toast para errores de validación
       toast.error("Por favor, corrige los errores en el formulario")
       return
     }
@@ -166,30 +164,24 @@ const ClienteForm = ({ cliente, onClose, onSave }) => {
       let savedCliente
       let dataToSend = { ...formData }
       if (cliente && !formData.password) {
-        // Si está editando y no escribió password, no lo envíes
         delete dataToSend.password
       }
       if (cliente) {
         savedCliente = await updateCliente(cliente.id, dataToSend)
-        // Toast para actualización exitosa
         toast.success(`Cliente ${formData.nombreCompleto} actualizado exitosamente`)
       } else {
         console.log("Datos enviados:", formData)
         savedCliente = await createCliente(dataToSend)
-        // Toast para creación exitosa
         toast.success(`Cliente ${formData.nombreCompleto} registrado exitosamente`)
       }
 
-      // Asegurar que onSave se llame con los datos actualizados del cliente
       if (typeof onSave === 'function') {
         onSave(savedCliente);
       }
-      
-      // Cerrar el formulario después de guardar exitosamente
+
       onClose();
     } catch (error) {
       console.error("Error al guardar cliente:", error)
-      // Mostrar el mensaje de error específico en un toast
       const errorMsg = error.message || "Error al guardar el cliente"
       toast.error(errorMsg)
       setSubmitError(errorMsg)
@@ -199,17 +191,14 @@ const ClienteForm = ({ cliente, onClose, onSave }) => {
     }
   }
 
-  // Función para avanzar al siguiente paso
   const nextStep = () => {
     if (validateCurrentStep()) {
       setCurrentStep((prev) => Math.min(prev + 1, totalSteps))
     } else {
-      // Toast para errores de validación del paso actual
       toast.warning("Por favor, completa correctamente todos los campos")
     }
   }
 
-  // Función para retroceder al paso anterior
   const prevStep = () => {
     setCurrentStep((prev) => Math.max(prev - 1, 1))
   }
@@ -222,7 +211,7 @@ const ClienteForm = ({ cliente, onClose, onSave }) => {
         label: "Nombre Completo",
         value: formData.nombreCompleto,
         error: errors.nombreCompleto,
-        icon: <User size={18} className="text-orange-400" />,
+        icon: <User size={18} className="text-indigo-500" />,
       },
       {
         type: "document-group",
@@ -255,7 +244,7 @@ const ClienteForm = ({ cliente, onClose, onSave }) => {
         label: "Correo Electrónico",
         value: formData.correoElectronico,
         error: errors.correoElectronico,
-        icon: <Mail size={18} className="text-orange-400" />,
+        icon: <Mail size={18} className="text-indigo-500" />,
       },
       {
         type: "password",
@@ -263,7 +252,7 @@ const ClienteForm = ({ cliente, onClose, onSave }) => {
         label: "Contraseña",
         value: formData.password,
         error: errors.password,
-        icon: <Lock size={18} className="text-orange-400" />,
+        icon: <Lock size={18} className="text-indigo-500" />,
         placeholder: cliente
           ? "Dejar en blanco para mantener la contraseña actual"
           : "Mínimo 6 caracteres",
@@ -277,7 +266,7 @@ const ClienteForm = ({ cliente, onClose, onSave }) => {
         label: "Teléfono",
         value: formData.telefono,
         error: errors.telefono,
-        icon: <Phone size={18} className="text-orange-400" />,
+        icon: <Phone size={18} className="text-indigo-500" />,
         maxLength: 10,
         pattern: "[0-9]*",
         inputMode: "numeric",
@@ -288,7 +277,7 @@ const ClienteForm = ({ cliente, onClose, onSave }) => {
         label: "Dirección",
         value: formData.direccion,
         error: errors.direccion,
-        icon: <MapPin size={18} className="text-orange-400" />,
+        icon: <MapPin size={18} className="text-indigo-500" />,
       },
       {
         type: "select",
@@ -301,9 +290,9 @@ const ClienteForm = ({ cliente, onClose, onSave }) => {
         ],
         icon:
           formData.estado === "activo" ? (
-            <CheckCircle size={18} className="text-green-400" />
+            <CheckCircle size={18} className="text-green-500" />
           ) : (
-            <AlertCircle size={18} className="text-red-400" />
+            <AlertCircle size={18} className="text-red-500" />
           ),
       },
     ],
@@ -332,99 +321,159 @@ const ClienteForm = ({ cliente, onClose, onSave }) => {
     return <FormField key={field.name} {...field} onChange={handleChange} />
   }
 
-  const FormSteps = () => (
-    <div className="flex justify-center mb-6">
-      {Array.from({ length: totalSteps }, (_, i) => i + 1).map((step) => (
-        <div key={step} className="flex items-center">
-          <div
-            className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-white text-sm
-              ${
-                currentStep === step
-                  ? "bg-orange-500 shadow-lg shadow-orange-500/30"
-                  : currentStep > step
-                    ? "bg-green-500 shadow-lg shadow-green-500/30"
-                    : "bg-gray-700"
-              }`}
-          >
-            {step}
-          </div>
-          {step < totalSteps && (
-            <div className={`w-12 h-1 ${currentStep > step ? "bg-green-500" : "bg-gray-700"}`}></div>
-          )}
-        </div>
-      ))}
-    </div>
-  )
-
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm flex items-center justify-center z-50 p-4 overflow-y-auto">
-      <div className="bg-gray-900 rounded-xl shadow-2xl w-full max-w-md border-t-4 border-orange-500 animate-fade-in">
-        <div className="flex justify-between items-center p-4 border-b border-gray-800 bg-gray-950">
-          <h2 className="text-lg font-bold text-white flex items-center">
-            <span className="bg-orange-500 text-white p-1.5 rounded-lg mr-2">
-              <User size={16} />
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4 overflow-y-auto">
+      <div className={`rounded-xl shadow-xl w-full max-w-md transform transition-all ${
+        darkMode 
+          ? 'bg-gray-800 border border-gray-700' 
+          : 'bg-white border border-slate-200'
+      }`}>
+        {/* Header */}
+        <div className={`flex justify-between items-center p-6 border-b ${
+          darkMode ? 'border-gray-700' : 'border-slate-200'
+        }`}>
+          <h2 className={`text-xl font-semibold flex items-center gap-3 ${
+            darkMode ? 'text-white' : 'text-slate-900'
+          }`}>
+            <span className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white p-2 rounded-lg shadow-lg">
+              <User size={18} />
             </span>
             {cliente ? "Editar Cliente" : "Registrar Cliente"}
           </h2>
           <button
             onClick={() => {
               onClose();
-              toast.info("Operación cancelada");
             }}
-            className="text-gray-400 hover:text-white hover:rotate-90 transition-all bg-gray-800 p-1.5 rounded-full"
-            title="Volver"
+            className={`p-2 rounded-full transition-all ${
+              darkMode 
+                ? 'text-gray-400 hover:text-gray-200 hover:bg-gray-700' 
+                : 'text-slate-500 hover:text-slate-700 hover:bg-slate-100'
+            }`}
+            title="Cerrar"
           >
             <X size={20} />
           </button>
         </div>
 
-        <div className="p-4">
+        <div className="p-6">
+          {/* Error Message */}
           {submitError && (
-            <div className="bg-red-900 text-white p-3 rounded-lg mb-4 animate-pulse border border-red-500 text-sm">
+            <div className={`p-4 rounded-lg mb-6 border text-sm ${
+              darkMode 
+                ? 'bg-red-900/20 border-red-500/30 text-red-300' 
+                : 'bg-red-50 border-red-200 text-red-700'
+            }`}>
               {submitError}
             </div>
           )}
 
-          <FormSteps />
-
-          <div>
-            {formFieldsByStep[currentStep].map(renderFormField)}
-
-            <div className="flex justify-between mt-6">
-              {currentStep > 1 ? (
-                <button
-                  type="button"
-                  onClick={prevStep}
-                  className="bg-gray-700 text-white px-4 py-2 rounded-lg hover:bg-gray-600"
-                >
-                  Atrás
-                </button>
-              ) : (
-                <div />
-              )}
-
-              {currentStep < totalSteps ? (
-                <button
-                  type="button"
-                  onClick={nextStep}
-                  className="bg-orange-500 text-white px-4 py-2 rounded-lg hover:bg-orange-600"
-                >
-                  Siguiente
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  onClick={submitForm}
-                  disabled={isSubmitting}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-lg text-white ${
-                    isSubmitting ? "bg-gray-600" : "bg-green-600 hover:bg-green-700"
+          {/* Steps */}
+          <div className="flex justify-center mb-8 px-4">
+            {Array.from({ length: totalSteps }, (_, i) => i + 1).map((step) => (
+              <div key={step} className="flex items-center">
+                <div
+                  className={`w-10 h-10 rounded-full flex items-center justify-center font-semibold text-sm
+                  transition-all duration-300 ${
+                    currentStep === step
+                      ? "bg-gradient-to-r from-indigo-500 to-purple-600 text-white shadow-lg shadow-indigo-500/30"
+                      : currentStep > step
+                        ? "bg-gradient-to-r from-green-500 to-green-600 text-white shadow-lg shadow-green-500/30"
+                        : darkMode
+                          ? "bg-gray-700 text-gray-400"
+                          : "bg-slate-100 text-slate-400"
                   }`}
                 >
+                  {currentStep > step ? "✓" : step}
+                </div>
+                {step < totalSteps && (
+                  <div className={`w-16 h-1 mx-2 rounded-full transition-all duration-300 ${
+                    currentStep > step
+                      ? "bg-gradient-to-r from-green-500 to-green-600"
+                      : darkMode
+                        ? "bg-gray-700"
+                        : "bg-slate-200"
+                  }`} />
+                )}
+              </div>
+            ))}
+          </div>
+
+          {/* Step Title */}
+          <div className="text-center mb-6">
+            <h3 className={`text-lg font-semibold mb-2 ${
+              darkMode ? 'text-white' : 'text-slate-900'
+            }`}>
+              {currentStep === 1 ? "Información Personal" : "Contacto y Estado"}
+            </h3>
+            <p className={`text-sm ${
+              darkMode ? 'text-gray-400' : 'text-slate-500'
+            }`}>
+              {currentStep === 1 
+                ? "Datos básicos del cliente" 
+                : "Información de contacto y configuración"
+              }
+            </p>
+          </div>
+
+          {/* Form Fields */}
+          <div className="space-y-4">
+            {formFieldsByStep[currentStep].map(renderFormField)}
+          </div>
+
+          {/* Buttons */}
+          <div className="flex justify-between mt-8 gap-4">
+            {currentStep > 1 ? (
+              <button
+                type="button"
+                onClick={prevStep}
+                className={`px-6 py-2.5 rounded-lg border transition-all duration-200 ${
+                  darkMode 
+                    ? 'border-gray-600 text-gray-300 hover:bg-gray-700 hover:text-white' 
+                    : 'border-slate-300 text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                }`}
+              >
+                Atrás
+              </button>
+            ) : (
+              <div />
+            )}
+
+            {currentStep < totalSteps ? (
+              <button
+                type="button"
+                onClick={nextStep}
+                className="px-6 py-2.5 rounded-lg bg-gradient-to-r from-indigo-500 to-purple-600 
+                       text-white hover:from-indigo-600 hover:to-purple-700
+                       transition-all duration-200 shadow-lg shadow-indigo-500/20 hover:shadow-indigo-500/30"
+              >
+                Siguiente
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={submitForm}
+                disabled={isSubmitting}
+                className={`flex items-center gap-2 px-6 py-2.5 rounded-lg text-white transition-all duration-200 ${
+                  isSubmitting
+                    ? darkMode
+                      ? "bg-gray-600 cursor-not-allowed"
+                      : "bg-slate-400 cursor-not-allowed"
+                    : "bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 shadow-lg shadow-green-500/20 hover:shadow-green-500/30"
+                }`}
+              >
+                {isSubmitting ? (
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                ) : (
                   <Save size={18} />
-                  {cliente ? "Actualizar" : "Guardar"}
-                </button>
-              )}
-            </div>
+                )}
+                {isSubmitting 
+                  ? "Guardando..." 
+                  : cliente 
+                    ? "Actualizar" 
+                    : "Guardar"
+                }
+              </button>
+            )}
           </div>
         </div>
       </div>

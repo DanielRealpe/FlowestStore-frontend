@@ -5,6 +5,7 @@ import ClienteList from "./components/ClienteList"
 import ClienteForm from "./components/ClienteForm"
 import { fetchClientes } from "./api/clienteService"
 import { PlusCircle, Users, RefreshCw } from "lucide-react"
+import { useTheme } from "../../components/layout/ThemeContext.jsx" // Importar el contexto de tema
 
 const Cliente = () => {
   const [clientes, setClientes] = useState([])
@@ -12,6 +13,9 @@ const Cliente = () => {
   const [error, setError] = useState(null)
   const [showForm, setShowForm] = useState(false)
   const [currentCliente, setCurrentCliente] = useState(null)
+  
+  // Usar el contexto de tema
+  const { darkMode } = useTheme()
 
   // Cargar clientes al montar el componente
   useEffect(() => {
@@ -56,20 +60,25 @@ const Cliente = () => {
 
   return (
     <div className="container mx-auto px-4 py-6">
-      <div className="bg-gradient-to-br from-gray-900 to-gray-950 rounded-xl shadow-xl p-6 border-l-4 border-orange-500">
+      <div className={`rounded-xl shadow-xl p-6 border-l-4 border-indigo-500 ${
+        darkMode 
+          ? 'bg-gradient-to-br from-gray-800 to-gray-900' 
+          : 'bg-gradient-to-br from-white to-slate-50'
+      }`}>
         <div className="flex justify-between items-center mb-6">
           <div className="flex items-center">
-            <div className="bg-orange-500 p-3 rounded-lg mr-4 shadow-lg shadow-orange-500/20">
-              <Users size={24} className="text-white" />
-            </div>
             <div>
-              <h1 className="text-2xl font-bold text-white">Gestión de Clientes</h1>
-              <p className="text-gray-400 text-sm">Administra la información de tus clientes</p>
+              <h1 className={`text-2xl font-bold ${darkMode ? 'text-white' : 'text-slate-900'}`}>
+                Gestión de Clientes
+              </h1>
+              <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-slate-500'}`}>
+                Administra la información de tus clientes
+              </p>
             </div>
           </div>
           <button
             onClick={handleCreateClick}
-            className="bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-all duration-300 transform hover:scale-105 shadow-lg"
+            className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-all duration-300 transform hover:scale-105 shadow-lg"
           >
             <PlusCircle size={20} />
             <span>Registrar Cliente</span>
@@ -77,7 +86,11 @@ const Cliente = () => {
         </div>
 
         {error && (
-          <div className="bg-red-900 text-white p-4 rounded-lg mb-6 animate-pulse border border-red-500 flex items-center">
+          <div className={`p-4 rounded-lg mb-6 border flex items-center ${
+            darkMode 
+              ? 'bg-red-900/20 text-red-300 border-red-500/30' 
+              : 'bg-red-50 text-red-700 border-red-200'
+          }`}>
             <svg
               xmlns="http://www.w3.org/2000/svg"
               className="h-6 w-6 mr-2"
@@ -97,20 +110,36 @@ const Cliente = () => {
         )}
 
         {loading ? (
-          <div className="flex flex-col justify-center items-center h-64 bg-gray-800 rounded-lg border border-gray-700">
-            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-orange-500 mb-4"></div>
-            <p className="text-gray-400">Cargando clientes...</p>
+          <div className={`flex flex-col justify-center items-center h-64 rounded-lg border ${
+            darkMode 
+              ? 'bg-gray-800 border-gray-700' 
+              : 'bg-white border-slate-200'
+          }`}>
+            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500 mb-4"></div>
+            <p className={`${darkMode ? 'text-gray-400' : 'text-slate-500'}`}>
+              Cargando clientes...
+            </p>
           </div>
         ) : (
-          <div className="bg-gray-900 rounded-lg p-6 border border-gray-800">
+          <div className={`rounded-lg p-6 border ${
+            darkMode 
+              ? 'bg-gray-800 border-gray-700' 
+              : 'bg-white border-slate-200'
+          }`}>
             <div className="flex justify-between items-center mb-4">
-              <h2 className="text-lg font-semibold text-white flex items-center">
-                <Users size={18} className="mr-2 text-orange-400" />
+              <h2 className={`text-lg font-semibold flex items-center ${
+                darkMode ? 'text-white' : 'text-slate-900'
+              }`}>
+                <Users size={18} className="mr-2 text-indigo-500" />
                 Lista de Clientes
               </h2>
               <button
                 onClick={loadClientes}
-                className="p-2 text-gray-400 hover:text-orange-500 transition-colors flex items-center gap-1"
+                className={`p-2 transition-colors flex items-center gap-1 rounded-lg ${
+                  darkMode 
+                    ? 'text-gray-400 hover:text-indigo-400 hover:bg-gray-700' 
+                    : 'text-slate-500 hover:text-indigo-600 hover:bg-slate-100'
+                }`}
                 title="Refrescar"
               >
                 <RefreshCw size={16} />
@@ -133,4 +162,3 @@ const Cliente = () => {
 }
 
 export default Cliente
-

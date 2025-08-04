@@ -54,6 +54,16 @@ export const fetchCategorias = async () => {
   }
 };
 
+export const fetchCategoriasDeLaHomePage = async () => {
+  try {
+    const res = await axios.get(`${VITE_API_URL}/categoria//Categorias/DeLa/Home/Page`);
+    return res.data;
+  } catch (error) {
+    console.error("Error al obtener categorias", error);
+    throw error;
+  }
+};
+
 // ✅ Obtener categoría por ID (GET)
 export const fetchCategoriaById = async (id) => {
   try {

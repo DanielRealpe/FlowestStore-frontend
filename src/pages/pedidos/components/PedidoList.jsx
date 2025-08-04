@@ -176,8 +176,8 @@ const PedidoList = ({ onEdit, onDelete, onRefresh }) => {
     } else if (sortField === "total") {
       return sortDirection === "asc" ? a.total - b.total : b.total - a.total
     } else if (sortField === "cliente") {
-      const nombreA = a.Cliente?.nombrecompleto || ""
-      const nombreB = b.Cliente?.nombrecompleto || ""
+      const nombreA = a.Cliente?.nombrecompleto || pedido.documentoIdentidad || ""
+      const nombreB = b.Cliente?.nombrecompleto || pedido.documentoIdentidad || ""
       return sortDirection === "asc" ? nombreA.localeCompare(nombreB) : nombreB.localeCompare(nombreA)
     }
     return 0
@@ -200,7 +200,7 @@ const PedidoList = ({ onEdit, onDelete, onRefresh }) => {
 
       // Búsqueda por categoría específica
       if (searchCategory === "cliente") {
-        return pedido.Cliente?.nombrecompleto?.toLowerCase().includes(searchLower)
+        return pedido.Cliente?.nombrecompleto || pedido.documentoIdentidad?.toLowerCase().includes(searchLower)
       } else if (searchCategory === "producto") {
         // Corregir la búsqueda de productos
         return pedido.Productos?.some((p) => p.nombre?.toLowerCase().includes(searchLower))
@@ -213,7 +213,7 @@ const PedidoList = ({ onEdit, onDelete, onRefresh }) => {
       } else {
         // Búsqueda en todos los campos
         return (
-          pedido.Cliente?.nombrecompleto?.toLowerCase().includes(searchLower) ||
+          pedido.Cliente?.nombrecompleto || pedido.documentoIdentidad?.toLowerCase().includes(searchLower) ||
           pedido.direccion_envio?.toLowerCase().includes(searchLower) ||
           pedido.Productos?.some((p) => p.nombre?.toLowerCase().includes(searchLower)) ||
           pedido.id.toString().includes(debouncedSearchTerm) ||
@@ -293,7 +293,7 @@ const PedidoList = ({ onEdit, onDelete, onRefresh }) => {
         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-white">#{pedido.id}</td>
 
         {/* Cliente */}
-        <td className="px-6 py-4 whitespace-nowrap text-sm text-white">{pedido.Cliente?.nombrecompleto}</td>
+        <td className="px-6 py-4 whitespace-nowrap text-sm text-white">{pedido.Cliente?.nombrecompleto || pedido.documentoIdentidad}</td>
 
         {/* Total */}
         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
@@ -374,7 +374,7 @@ const PedidoList = ({ onEdit, onDelete, onRefresh }) => {
             Pedido #{pedido.id}
           </h3>
           <p className="text-white text-center text-sm mb-2">
-            {pedido.Cliente?.nombrecompleto || "Sin cliente"}
+            {pedido.Cliente?.nombrecompleto || pedido.documentoIdentidad || "Sin cliente"}
           </p>
           <p className="text-center text-sm text-gray-400 mb-2">
             ${formatearPesosColombianos(pedido.total)}

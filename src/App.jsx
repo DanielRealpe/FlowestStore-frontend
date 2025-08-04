@@ -13,11 +13,13 @@ import Usuario from "./pages/usuarios/usuario"
 import Venta from "./pages/ventas/venta"
 import Configuracion from "./pages/configuracion/configuracion"
 import Dashboard from "./pages/dashboard/dashboard"
+import { Home } from "./pages/home/home"
 import { SidebarProvider } from "./components/layout/sidebarContext"
 import LoginPage from "./pages/usuarios/Login"
 import { useSidebar } from "./components/layout/sidebarUtils"
 import { ToastContainer } from "react-toastify"
 import "react-toastify/dist/ReactToastify.css"
+import RegisterForm from "./pages/usuarios/components/RegisterForm"
 
 import "./App.css"
 import { AuthProvider, useAuth } from "./pages/usuarios/context/AuthContext"
@@ -25,25 +27,27 @@ import "./App.css"
 import ProtectedRoute from "./pages/usuarios/components/ProtectedRoute"
 import Inventory from "./pages/inventory/inventory"
 import Welcome from "./pages/welcome/welcome"
+import { ThemeProvider, useTheme } from "./components/layout/ThemeContext.jsx"
+import UserProfile from "./pages/perfile/user-profile.js"
 
 // Componente para proteger rutas
-const ProtectedRouteWrapper = ({ children, requiredPermission, requiredRole }) => {
-  const { isAuthenticated, isLoadingAuth } = useAuth()
+const ProtectedRouteWrapper = ({ children, requiredPermission, requiredRole, allowedTypes = ["usuario"] }) => {
+  const { isAuthenticated, isLoadingAuth, tipo } = useAuth()
   const [initialized, setInitialized] = useState(false)
 
   useEffect(() => {
-    // Solo actualizar el estado cuando la carga de autenticación ha terminado
-    if (!isLoadingAuth) {
-      setInitialized(true)
-    }
+    if (!isLoadingAuth) setInitialized(true)
   }, [isLoadingAuth])
 
-  // No renderizar nada hasta que la autenticación haya terminado de cargar
   if (!initialized) {
     return <div className="flex justify-center items-center h-screen">Cargando...</div>
   }
 
-  if (!isAuthenticated) {
+  // Si no está autenticado o el tipo no es permitido, redirigir
+  if (!isAuthenticated || !allowedTypes.includes(tipo)) {
+    // Si es cliente y no tiene acceso, lo mandas a home
+    if (tipo === "cliente") return <Navigate to="/" replace />
+    // Si es usuario/admin y no tiene acceso, lo mandas a login
     return <Navigate to="/login" replace />
   }
 
@@ -57,19 +61,22 @@ const ProtectedRouteWrapper = ({ children, requiredPermission, requiredRole }) =
 export function App() {
   return (
     <Router>
-      <AuthProvider>
-        <SidebarProvider>
-          <AppContent />
-        </SidebarProvider>
-      </AuthProvider>
+      <ThemeProvider>
+        <AuthProvider>
+          <SidebarProvider>
+            <AppContent />
+          </SidebarProvider>
+        </AuthProvider>
+      </ThemeProvider>
     </Router>
   )
 }
 
 function AppContent() {
   const { isExpanded } = useSidebar()
-  const { isAuthenticated, isLoadingAuth } = useAuth()
+  const { isAuthenticated, isLoadingAuth, tipo } = useAuth()
   const [initialized, setInitialized] = useState(false)
+  const { darkMode } = useTheme() // Añade esta línea para usar el tema
 
   useEffect(() => {
     // Solo actualizar el estado cuando la carga de autenticación ha terminado
@@ -85,27 +92,36 @@ function AppContent() {
 
   return (
     <div className="flex h-screen">
-      {isAuthenticated && <Sidebar />}
+      {(isAuthenticated && tipo === "usuario" && window.location.pathname !== "/") && <Sidebar />}
       <main
-        className={`flex-1 ${isAuthenticated ? (isExpanded ? "ml-64" : "ml-20") : ""} overflow-y-auto transition-all duration-300`}
+        className={`flex-1 ${
+          (isAuthenticated && tipo === "usuario" && window.location.pathname !== "/") 
+            ? (isExpanded ? "ml-64" : "ml-20") 
+            : ""
+        } overflow-y-auto transition-all duration-300 ${
+          darkMode 
+            ? 'bg-gray-800 border-gray-700 text-white' 
+            : 'bg-white border-slate-200 text-slate-900'
+        }`}
       >
-        {isAuthenticated && <Navbar />}
-        <div className={`${isAuthenticated ? "p-4 pt-20" : ""}`}>
+        {(isAuthenticated && tipo === "usuario" && window.location.pathname !== "/") && <Navbar />}
+        <div className={`${
+          (isAuthenticated && tipo === "usuario" && window.location.pathname !== "/") 
+            ? "p-4 pt-20" 
+            : ""
+        }`}>
           <Routes>
-            {/* Redirigir "/" a login o dashboard según autenticación */}
-            <Route
-              path="/"
-              element={isAuthenticated ? <Navigate to="/welcome" replace /> : <Navigate to="/login" replace />}
-            />
+            {/* Página principal siempre muestra Home */}
+            <Route path="/" element={<Home />} />
 
             {/* Página de Login */}
-            <Route path="/login" element={isAuthenticated ? <Navigate to="/welcome" replace /> : <LoginPage />} />
+            <Route path="/login" element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <LoginPage />} />
 
             {/* Rutas protegidas del sistema */}
             <Route
               path="/dashboard"
               element={
-                <ProtectedRouteWrapper requiredPermission="dashboard.ver">
+                <ProtectedRouteWrapper requiredPermission="dashboard.ver" allowedTypes={["usuario"]}>
                   <Dashboard />
                 </ProtectedRouteWrapper>
               }
@@ -113,7 +129,7 @@ function AppContent() {
             <Route
               path="/clientes"
               element={
-                <ProtectedRouteWrapper requiredPermission="clientes.ver">
+                <ProtectedRouteWrapper requiredPermission="clientes.ver" allowedTypes={["usuario"]}>
                   <Cliente />
                 </ProtectedRouteWrapper>
               }
@@ -121,7 +137,7 @@ function AppContent() {
             <Route
               path="/pedidos"
               element={
-                <ProtectedRouteWrapper requiredPermission="pedidos.ver">
+                <ProtectedRouteWrapper requiredPermission="pedidos.ver " allowedTypes={["usuario"]}>
                   <Pedido />
                 </ProtectedRouteWrapper>
               }
@@ -137,7 +153,7 @@ function AppContent() {
             <Route
               path="/categoria"
               element={
-                <ProtectedRouteWrapper requiredPermission="categorias.ver">
+                <ProtectedRouteWrapper requiredPermission="categorias.ver " allowedTypes={["usuario"]}>
                   <Categoria />
                 </ProtectedRouteWrapper>
               }
@@ -145,7 +161,7 @@ function AppContent() {
             <Route
               path="/productos"
               element={
-                <ProtectedRouteWrapper requiredPermission="productos.ver">
+                <ProtectedRouteWrapper requiredPermission="productos.ver " allowedTypes={["usuario"]}>
                   <Productos />
                 </ProtectedRouteWrapper>
               }
@@ -153,7 +169,7 @@ function AppContent() {
             <Route
               path="/ventas"
               element={
-                <ProtectedRouteWrapper requiredPermission="ventas.ver">
+                <ProtectedRouteWrapper requiredPermission="ventas.ver " allowedTypes={["usuario"]}>
                   <Venta />
                 </ProtectedRouteWrapper>
               }
@@ -167,10 +183,10 @@ function AppContent() {
               }
             />
             <Route
-              path="/inventory"
+              path="/perfil"
               element={
-                <ProtectedRouteWrapper requiredPermission="inventario.ver">
-                  <Inventory />
+                <ProtectedRouteWrapper allowedTypes={["usuario"]}>
+                  <UserProfile />
                 </ProtectedRouteWrapper>
               }
             />
@@ -182,13 +198,13 @@ function AppContent() {
                 </ProtectedRouteWrapper>
               }
             />
+            <Route path="/register" element={<RegisterForm />} />
 
             {/* Ruta para manejar páginas no encontradas */}
             <Route path="*" element={<NotFound />} />
           </Routes>
         </div>
 
-        {/* 🔔 Contenedor global para notificaciones */}
         <ToastContainer
           position="top-right"
           autoClose={3000}
@@ -196,7 +212,7 @@ function AppContent() {
           newestOnTop
           closeOnClick
           pauseOnHover
-          theme="dark"
+          theme={darkMode ? "dark" : "light"}
         />
       </main>
     </div>

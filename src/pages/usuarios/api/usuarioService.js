@@ -41,7 +41,7 @@ export const loginUsuario = async (credentials) => {
     return response.data;
   } catch (error) {
     console.error("Error al iniciar sesión:", error);
-    throw error;
+
   }
 };
 
@@ -52,7 +52,7 @@ export const logoutUsuario = async () => {
     return response.data;
   } catch (error) {
     console.error("Error al cerrar sesión:", error);
-    throw error;
+
   }
 };
 
@@ -77,7 +77,7 @@ export const getUsuarioAutenticado = async () => {
     return response.data.data;
   } catch (error) {
     console.error("Error al obtener usuario autenticado:", error);
-    throw error;
+
   }
 };
 
@@ -96,7 +96,7 @@ export const getUserById = async (id) => {
     return response.data;
   } catch (error) {
     console.error(`Error al obtener usuario con ID ${id}:`, error);
-    throw error;
+
   }
 };
 
@@ -112,7 +112,7 @@ export const fetchUsuarios = async () => {
     return response.data.usuarios || response.data.data || response.data
   } catch (error) {
     console.error("Error al obtener usuarios:", error);
-    throw error;
+
   }
 };
 
@@ -327,7 +327,7 @@ export const fetchRoles = async () => {
     return response.data.data || response.data;
   } catch (error) {
     console.error("Error al obtener roles:", error);
-    throw error;
+
   }
 };
 

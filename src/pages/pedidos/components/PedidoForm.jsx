@@ -1,14 +1,13 @@
-"use client"
-
-import { useState, useEffect } from "react"
-import { X, ShoppingBag, Plus, Minus, Trash2 } from "lucide-react"
+import { useState, useEffect, useRef } from "react"
+import { X, ShoppingBag, Plus, Minus, Trash2, Save } from "lucide-react"
 import { createPedido, updatePedido, fetchClientesPedidos, fetchProductos } from "../api/pedidoservice.js"
 import { toast } from "react-toastify"
-
+import { useTheme } from "../../../components/layout/ThemeContext.jsx"
 import FormField from "../../clientes/components/form/FormField.jsx"
 import SelectField from "../../clientes/components/form/SelectField.jsx"
 
 const PedidoForm = ({ pedido, onClose, onSave }) => {
+  const { darkMode } = useTheme()
   const initialFormData = {
     id_cliente: "",
     direccion_envio: "",
@@ -24,6 +23,10 @@ const PedidoForm = ({ pedido, onClose, onSave }) => {
   const [loading, setLoading] = useState(true)
   const [currentProducto, setCurrentProducto] = useState("")
   const [currentCantidad, setCurrentCantidad] = useState(1)
+  const [clienteSearch, setClienteSearch] = useState("")
+  const [showClienteDropdown, setShowClienteDropdown] = useState(false)
+  const clienteInputRef = useRef(null)
+  const clienteDropdownRef = useRef(null)
 
   // Cargar datos iniciales
   useEffect(() => {
@@ -192,7 +195,7 @@ const PedidoForm = ({ pedido, onClose, onSave }) => {
 
   // Validaciones de formulario
   const validations = {
-    id_cliente: (value) => (!value ? "El cliente es obligatorio" : ""),
+    // id_cliente: (value) => (!value ? "El cliente es obligatorio" : ""),
     
     productos: (array) => (array.length === 0 ? "Debe agregar al menos un producto" : ""),
   }
@@ -219,9 +222,35 @@ const PedidoForm = ({ pedido, onClose, onSave }) => {
     setSubmitError("")
 
     try {
+      // Buscar si el cliente existe por id_cliente
+      const clienteSeleccionado = clientes.find(
+        (c) => c.id.toString() === formData.id_cliente
+      )
+
+      // Si no existe, buscar si el texto ingresado es un documento válido no encontrado
+      let id_cliente = null
+      let documentoIdentidad = null
+
+      if (clienteSeleccionado) {
+        id_cliente = Number.parseInt(formData.id_cliente)
+      } else {
+        // Intentar extraer el documento del input de búsqueda
+        // Si el usuario seleccionó de la lista, clienteSearch tendrá "Nombre (Documento)"
+        // Si no, puede haber escrito solo el documento
+        // Extraer el documento si está entre paréntesis
+        const match = clienteSearch.match(/\(([^)]+)\)$/)
+        if (match) {
+          documentoIdentidad = match[1]
+        } else {
+          // Si no hay paréntesis, usar el texto completo como documento
+          documentoIdentidad = clienteSearch.trim()
+        }
+      }
+
       // Preparar datos para enviar
       const pedidoData = {
-        id_cliente: Number.parseInt(formData.id_cliente),
+        id_cliente: id_cliente,
+        documentoIdentidad: id_cliente ? undefined : documentoIdentidad,
         direccion_envio: formData.direccion_envio,
         total: calcularTotal(),
         productos: formData.productos.map((item) => {
@@ -230,14 +259,16 @@ const PedidoForm = ({ pedido, onClose, onSave }) => {
             cantidad: item.cantidad,
             precio_unitario: item.precio_unitario,
           }
-
-          // Si estamos editando un pedido y el producto tiene un id de relación, incluirlo
           if (pedido && item.id) {
             productoData.id = item.id
           }
           return productoData
         }),
       }
+
+      // Elimina el campo documentoIdentidad si no aplica
+      if (id_cliente) delete pedidoData.documentoIdentidad
+
       console.log("pedidoData: ", pedidoData)
 
       let respuesta
@@ -249,10 +280,8 @@ const PedidoForm = ({ pedido, onClose, onSave }) => {
         toast.success("Pedido creado exitosamente")
       }
 
-      // Pasar la respuesta al componente padre para que actualice la lista correctamente
       onSave(respuesta)
     } catch (error) {
-    
       const errorMessage = error.message || "Error al guardar el pedido"
       setSubmitError(errorMessage)
       toast.error(`Error: ${errorMessage}`)
@@ -266,6 +295,24 @@ const PedidoForm = ({ pedido, onClose, onSave }) => {
     return valor.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".")
   }
 
+  // Cerrar dropdown si se hace click fuera
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (
+        clienteDropdownRef.current &&
+        !clienteDropdownRef.current.contains(event.target) &&
+        clienteInputRef.current &&
+        !clienteInputRef.current.contains(event.target)
+      ) {
+        setShowClienteDropdown(false)
+      }
+    }
+    if (showClienteDropdown) {
+      document.addEventListener("mousedown", handleClickOutside)
+    }
+    return () => document.removeEventListener("mousedown", handleClickOutside)
+  }, [showClienteDropdown])
+
   if (loading) {
     return (
       <div className="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm flex items-center justify-center z-50">
@@ -278,49 +325,121 @@ const PedidoForm = ({ pedido, onClose, onSave }) => {
     )
   }
 
+  // Filtrar clientes por nombre o documento
+  const filteredClientes = clientes.filter((cliente) => {
+    const search = clienteSearch.toLowerCase()
+    return (
+      cliente.nombreCompleto?.toLowerCase().includes(search) ||
+      cliente.documentoIdentidad?.toLowerCase().includes(search)
+    )
+  })
+
+  // Manejar selección de cliente
+  const handleClienteSelect = (cliente) => {
+    setFormData((prev) => ({ ...prev, id_cliente: cliente.id.toString() }))
+    setClienteSearch(cliente.nombreCompleto + (cliente.documentoIdentidad ? ` (${cliente.documentoIdentidad})` : ""))
+    setShowClienteDropdown(false)
+    if (errors.id_cliente) setErrors((prev) => ({ ...prev, id_cliente: "" }))
+  }
+
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm flex items-center justify-center z-50">
-      <div className="bg-gray-900 rounded-xl shadow-2xl w-full max-w-3xl border-r-2 border-orange-500 animate-fade-in max-h-screen overflow-auto">
-        <div className="flex justify-between items-center p-6 border-b border-gray-800 sticky top-0 bg-gray-900 z-10">
-          <h2 className="text-xl font-bold text-white flex items-center">
-            <ShoppingBag className="mr-2 text-orange-500" size={24} />
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4 overflow-y-auto">
+      <div className={`rounded-xl shadow-xl w-full max-w-3xl transform transition-all ${
+        darkMode 
+          ? 'bg-gray-800 border border-gray-700' 
+          : 'bg-white border border-slate-200'
+      }`}>
+        {/* Header */}
+        <div className={`flex justify-between items-center p-6 border-b ${
+          darkMode ? 'border-gray-700' : 'border-slate-200'
+        }`}>
+          <h2 className={`text-xl font-semibold flex items-center gap-3 ${
+            darkMode ? 'text-white' : 'text-slate-900'
+          }`}>
+            <span className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white p-2 rounded-lg shadow-lg">
+              <ShoppingBag size={18} />
+            </span>
             {pedido ? "Editar Pedido" : "Nuevo Pedido"}
           </h2>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-white hover:rotate-90 transition-all bg-gray-800 p-2 rounded-full"
+            className={`p-2 rounded-full transition-all ${
+              darkMode 
+                ? 'text-gray-400 hover:text-gray-200 hover:bg-gray-700' 
+                : 'text-slate-500 hover:text-slate-700 hover:bg-slate-100'
+            }`}
             title="Cerrar"
           >
-            <X size={24} />
+            <X size={20} />
           </button>
         </div>
 
         <form onSubmit={handleSubmit} className="p-6">
+          {/* Error Message */}
           {submitError && (
-            <div className="bg-red-900 text-white p-4 rounded-lg mb-6 animate-pulse border border-red-500">
+            <div className={`p-4 rounded-lg mb-6 border text-sm ${
+              darkMode 
+                ? 'bg-red-900/20 border-red-500/30 text-red-300' 
+                : 'bg-red-50 border-red-200 text-red-700'
+            }`}>
               {submitError}
             </div>
           )}
 
+          {/* Cliente y Dirección */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-            {/* Cliente */}
-            <SelectField
-              name="id_cliente"
-              label="Cliente"
-              value={formData.id_cliente}
-              options={[
-                { value: "", label: "Seleccionar cliente" },
-                ...clientes.map((cliente) => ({
-                  value: cliente.id.toString(),
-                  label: cliente.nombreCompleto,
-                })),
-              ]}
-              onChange={handleChange}
-              error={errors.id_cliente}
-              className={errors.id_cliente ? "border-red-500" : ""}
-            />
+            <div className="relative">
+              <label className={`block mb-1.5 font-medium text-sm ${
+                darkMode ? 'text-gray-300' : 'text-slate-700'
+              }`}>
+                Cliente
+              </label>
+              <input
+                ref={clienteInputRef}
+                type="text"
+                value={formData.id_cliente && !clienteSearch
+                  ? (clientes.find(c => c.id.toString() === formData.id_cliente)?.nombreCompleto || "")
+                  : clienteSearch}
+                onChange={e => {
+                  setClienteSearch(e.target.value)
+                  setShowClienteDropdown(true)
+                  setFormData(prev => ({ ...prev, id_cliente: "" }))
+                }}
+                onFocus={() => setShowClienteDropdown(true)}
+                placeholder="Buscar por nombre o documento..."
+                className={`w-full rounded-lg p-2.5 text-sm transition-all duration-200 ${
+                  darkMode
+                    ? 'bg-gray-700 text-white border-gray-600 focus:border-indigo-500 focus:ring-indigo-500/20'
+                    : 'bg-white text-slate-900 border-slate-300 focus:border-indigo-500 focus:ring-indigo-500/20'
+                } ${errors.id_cliente ? 'border-red-500' : ''}`}
+              />
+              {showClienteDropdown && filteredClientes.length > 0 && (
+                <ul
+                  ref={clienteDropdownRef}
+                  className="absolute z-30 bg-gray-900 border border-gray-700 rounded-lg mt-1 w-full max-h-56 overflow-auto shadow-lg"
+                >
+                  {filteredClientes.slice(0, 20).map(cliente => (
+                    <li
+                      key={cliente.id}
+                      className="px-4 py-2 cursor-pointer hover:bg-orange-600 hover:text-white transition"
+                      onClick={() => handleClienteSelect(cliente)}
+                    >
+                      <span className="font-medium">{cliente.nombreCompleto}</span>
+                      {cliente.documentoIdentidad && (
+                        <span className="ml-2 text-xs text-gray-400">({cliente.documentoIdentidad})</span>
+                      )}
+                    </li>
+                  ))}
+                  {filteredClientes.length > 20 && (
+                    <li className="px-4 py-2 text-xs text-gray-400">Mostrando primeros 20 resultados...</li>
+                  )}
+                </ul>
+              )}
+              {errors.id_cliente && (
+                <div className="text-red-400 text-xs mt-1">{errors.id_cliente}</div>
+              )}
+            </div>
 
-            {/* Dirección de envío */}
             <FormField
               type="text"
               name="direccion_envio"
@@ -331,9 +450,15 @@ const PedidoForm = ({ pedido, onClose, onSave }) => {
             />
           </div>
 
-          {/* Sección para agregar productos */}
-          <div className="bg-gray-800 p-4 rounded-lg border border-gray-700 mb-6">
-            <h3 className="text-white font-medium mb-4 border-b border-gray-700 pb-2">Agregar Productos</h3>
+          {/* Sección Agregar Productos */}
+          <div className={`p-4 rounded-lg border mb-6 ${
+            darkMode ? 'bg-gray-700/50 border-gray-600' : 'bg-slate-50 border-slate-200'
+          }`}>
+            <h3 className={`font-medium mb-4 border-b pb-2 ${
+              darkMode ? 'text-white border-gray-600' : 'text-slate-900 border-slate-200'
+            }`}>
+              Agregar Productos
+            </h3>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
               <div className="md:col-span-2">
@@ -388,7 +513,10 @@ const PedidoForm = ({ pedido, onClose, onSave }) => {
               <button
                 type="button"
                 onClick={agregarProducto}
-                className="bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700 transition-colors flex items-center gap-2"
+                className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white 
+                         px-4 py-2 rounded-lg hover:from-indigo-600 hover:to-purple-700 
+                         transition-all duration-200 flex items-center gap-2 shadow-lg 
+                         shadow-indigo-500/20 hover:shadow-indigo-500/30"
               >
                 <Plus size={16} />
                 Agregar Producto
@@ -396,7 +524,7 @@ const PedidoForm = ({ pedido, onClose, onSave }) => {
             </div>
           </div>
 
-          {/* Lista de productos agregados */}
+          {/* Lista de Productos */}
           <div className="mb-6">
             <h3 className="text-white font-medium mb-3">Productos en este pedido</h3>
 
@@ -496,29 +624,40 @@ const PedidoForm = ({ pedido, onClose, onSave }) => {
             )}
           </div>
 
+          {/* Botones de Acción */}
           <div className="flex justify-end space-x-3 mt-8">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 bg-gray-800 text-white rounded-lg hover:bg-gray-700 transition-colors border border-gray-700"
-              disabled={isSubmitting}
+              className={`px-4 py-2 rounded-lg border transition-all duration-200 ${
+                darkMode 
+                  ? 'border-gray-600 text-gray-300 hover:bg-gray-700 hover:text-white' 
+                  : 'border-slate-300 text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+              }`}
             >
               Cancelar
             </button>
             <button
               type="submit"
-              className={`px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors flex items-center gap-2 border border-orange-500 ${
-                isSubmitting ? "opacity-70 cursor-not-allowed" : ""
-              }`}
               disabled={isSubmitting}
+              className={`flex items-center gap-2 px-6 py-2.5 rounded-lg text-white transition-all duration-200 ${
+                isSubmitting
+                  ? darkMode
+                    ? "bg-gray-600 cursor-not-allowed"
+                    : "bg-slate-400 cursor-not-allowed"
+                  : "bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 shadow-lg shadow-green-500/20 hover:shadow-green-500/30"
+              }`}
             >
               {isSubmitting ? (
                 <>
-                  <span className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></span>
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
                   Guardando...
                 </>
               ) : (
-                "Guardar Pedido"
+                <>
+                  <Save size={18} />
+                  {pedido ? "Actualizar" : "Guardar"}
+                </>
               )}
             </button>
           </div>

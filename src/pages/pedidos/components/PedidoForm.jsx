@@ -79,7 +79,7 @@ const PedidoForm = ({ pedido, onClose, onSave }) => {
         }) || []
 
       setFormData({
-        id_cliente: pedido.id_cliente?.toString(),
+        id_cliente: pedido.id_cliente?.toString() || pedido.documentoIdentidad,
         direccion_envio: pedido.direccion_envio || "",
         productos: pedidoProductos,
       })
@@ -184,8 +184,6 @@ const PedidoForm = ({ pedido, onClose, onSave }) => {
     nuevosProductos[index].subtotal = nuevaCantidad * nuevosProductos[index].precio_unitario
 
     setFormData((prev) => ({ ...prev, productos: nuevosProductos }))
-
-    toast.info(`Cantidad de ${producto.producto?.nombre} actualizada a ${nuevaCantidad}`)
   }
 
   // Calcular el total del pedido
@@ -316,9 +314,9 @@ const PedidoForm = ({ pedido, onClose, onSave }) => {
   if (loading) {
     return (
       <div className="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm flex items-center justify-center z-50">
-        <div className="bg-gray-900 rounded-xl shadow-2xl w-full max-w-2xl p-6 border-r-2 border-orange-500 animate-fade-in">
+        <div className={`rounded-xl shadow-xl w-full max-w-2xl p-6 ${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-slate-200'}`}>
           <div className="flex justify-center items-center h-64">
-            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-orange-600"></div>
+            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500"></div>
           </div>
         </div>
       </div>
@@ -398,7 +396,7 @@ const PedidoForm = ({ pedido, onClose, onSave }) => {
                 ref={clienteInputRef}
                 type="text"
                 value={formData.id_cliente && !clienteSearch
-                  ? (clientes.find(c => c.id.toString() === formData.id_cliente)?.nombreCompleto || "")
+                  ? (clientes.find(c => c.id.toString() === formData.id_cliente)?.nombreCompleto || pedido.documentoIdentidad)
                   : clienteSearch}
                 onChange={e => {
                   setClienteSearch(e.target.value)
@@ -416,12 +414,12 @@ const PedidoForm = ({ pedido, onClose, onSave }) => {
               {showClienteDropdown && filteredClientes.length > 0 && (
                 <ul
                   ref={clienteDropdownRef}
-                  className="absolute z-30 bg-gray-900 border border-gray-700 rounded-lg mt-1 w-full max-h-56 overflow-auto shadow-lg"
+                  className={`absolute z-30 ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-slate-200'} border rounded-lg mt-1 w-full max-h-56 overflow-auto shadow-lg`}
                 >
                   {filteredClientes.slice(0, 20).map(cliente => (
                     <li
                       key={cliente.id}
-                      className="px-4 py-2 cursor-pointer hover:bg-orange-600 hover:text-white transition"
+                      className={`px-4 py-2 cursor-pointer ${darkMode ? 'hover:bg-gray-700' : 'hover:bg-slate-100'} transition-all duration-200`}
                       onClick={() => handleClienteSelect(cliente)}
                     >
                       <span className="font-medium">{cliente.nombreCompleto}</span>
@@ -539,30 +537,30 @@ const PedidoForm = ({ pedido, onClose, onSave }) => {
                 No hay productos agregados al pedido
               </div>
             ) : (
-              <div className="bg-gray-800 rounded-lg border border-gray-700 overflow-hidden">
+              <div className={`rounded-lg border overflow-hidden ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-slate-200'}`}>
                 <table className="min-w-full">
-                  <thead className="bg-gray-900">
+                  <thead className={darkMode ? 'bg-gray-900' : 'bg-slate-50'}>
                     <tr>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-orange-500 uppercase tracking-wider">
+                      <th className={`px-4 py-3 text-left text-xs font-medium ${darkMode ? 'text-gray-400' : 'text-slate-500'} uppercase tracking-wider`}>
                         Producto
                       </th>
-                      <th className="px-4 py-3 text-center text-xs font-medium text-orange-500 uppercase tracking-wider">
+                      <th className={`px-4 py-3 text-left text-xs font-medium ${darkMode ? 'text-gray-400' : 'text-slate-500'} uppercase tracking-wider`}>
                         Cantidad
                       </th>
-                      <th className="px-4 py-3 text-right text-xs font-medium text-orange-500 uppercase tracking-wider">
+                      <th className={`px-4 py-3 text-left text-xs font-medium ${darkMode ? 'text-gray-400' : 'text-slate-500'} uppercase tracking-wider`}>
                         Precio Unit.
                       </th>
-                      <th className="px-4 py-3 text-right text-xs font-medium text-orange-500 uppercase tracking-wider">
+                      <th className={`px-4 py-3 text-left text-xs font-medium ${darkMode ? 'text-gray-400' : 'text-slate-500'} uppercase tracking-wider`}>
                         Subtotal
                       </th>
-                      <th className="px-4 py-3 text-center text-xs font-medium text-orange-500 uppercase tracking-wider">
+                      <th className={`px-4 py-3 text-left text-xs font-medium ${darkMode ? 'text-gray-400' : 'text-slate-500'} uppercase tracking-wider`}>
                         Acciones
                       </th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-700">
+                  <tbody className={`divide-y ${darkMode ? 'divide-gray-700' : 'divide-slate-200'}`}>
                     {formData.productos.map((item, index) => (
-                      <tr key={index} className="hover:bg-gray-700">
+                      <tr key={index} className={`${darkMode ? 'hover:bg-gray-700' : 'hover:bg-slate-50'} transition-colors duration-200`}>
                         <td className="px-4 py-3 whitespace-nowrap text-sm text-white">
                           {item.producto?.nombre || "Producto no disponible"}
                         </td>
@@ -571,7 +569,7 @@ const PedidoForm = ({ pedido, onClose, onSave }) => {
                             <button
                               type="button"
                               onClick={() => actualizarCantidad(index, item.cantidad - 1)}
-                              className="bg-gray-700 text-white p-1 rounded-l hover:bg-gray-600 transition-colors"
+                              className={`p-1 rounded-l transition-colors ${darkMode ? 'bg-gray-700 hover:bg-gray-600 text-white' : 'bg-slate-100 hover:bg-slate-200 text-slate-700'}`}
                             >
                               <Minus size={14} />
                             </button>
@@ -579,13 +577,13 @@ const PedidoForm = ({ pedido, onClose, onSave }) => {
                               type="number"
                               value={item.cantidad}
                               onChange={(e) => actualizarCantidad(index, Number.parseInt(e.target.value) || 1)}
-                              className="w-12 text-center bg-gray-700 text-white border-0 py-1"
+                              className={`w-12 text-center border-0 py-1 ${darkMode ? 'bg-gray-700 text-white' : 'bg-slate-100 text-slate-900'}`}
                               min="1"
                             />
                             <button
                               type="button"
                               onClick={() => actualizarCantidad(index, item.cantidad + 1)}
-                              className="bg-gray-700 text-white p-1 rounded-r hover:bg-gray-600 transition-colors"
+                              className={`p-1 rounded-r transition-colors ${darkMode ? 'bg-gray-700 hover:bg-gray-600 text-white' : 'bg-slate-100 hover:bg-slate-200 text-slate-700'}`}
                             >
                               <Plus size={14} />
                             </button>
@@ -613,7 +611,7 @@ const PedidoForm = ({ pedido, onClose, onSave }) => {
                       <td colSpan="3" className="px-4 py-3 text-right font-medium text-white">
                         Total del Pedido:
                       </td>
-                      <td className="px-4 py-3 text-right font-bold text-orange-400">
+                      <td className="px-4 py-3 text-right font-bold text-indigo-500">
                         ${formatearPesosColombianos(calcularTotal())}
                       </td>
                       <td></td>

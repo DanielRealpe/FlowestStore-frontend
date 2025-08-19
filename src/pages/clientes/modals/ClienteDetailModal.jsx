@@ -1,10 +1,13 @@
 "use client"
 
-import { Edit } from "lucide-react"
+import { Edit, User, X } from "lucide-react"
+import { useTheme } from "../../../components/layout/ThemeContext.jsx" // Ajusta la ruta según tu estructura
 
 const ClienteDetailModal = ({ cliente, onClose, onEdit }) => {
-  // Formatear fecha de registro
+  const { darkMode } = useTheme()
+
   const formatDate = (dateString) => {
+    if (!dateString) return "No disponible"
     try {
       return new Date(dateString).toLocaleDateString("es-ES", {
         day: "2-digit",
@@ -13,76 +16,110 @@ const ClienteDetailModal = ({ cliente, onClose, onEdit }) => {
       })
     } catch (error) {
       console.error("Error al formatear la fecha:", error)
-      return "Fecha no disponible"
+      return "Fecha inválida"
     }
   }
 
-  // Datos a mostrar en el modal
   const clienteDetails = [
     { label: "Nombre Completo", value: cliente.nombreCompleto },
     { label: "Documento", value: `${cliente.tipoDocumento}: ${cliente.documentoIdentidad}` },
     { label: "Correo Electrónico", value: cliente.correoElectronico },
     { label: "Teléfono", value: cliente.telefono },
     { label: "Dirección", value: cliente.direccion },
-    { label: "Género", value: cliente.genero, capitalize: true },
-    {
-      label: "Fecha de Registro",
-      value: formatDate(cliente.fechaRegistro),
-    },
+    { label: "Fecha de Registro", value: formatDate(cliente.fechaRegistro) },
     {
       label: "Estado",
       value: cliente.estado,
-      className: `font-medium capitalize ${cliente.estado === "activo" ? "text-green-400" : "text-red-400"}`,
+      isStatus: true,
     },
   ]
 
-  // Componente para cada campo de detalle
-  const DetailField = ({ label, value, className, capitalize }) => (
+  const DetailField = ({ label, value, isStatus, capitalize }) => (
     <div>
-      <p className="text-gray-400 text-sm">{label}</p>
-      <p className={className || "text-white font-medium" + (capitalize ? " capitalize" : "")}>{value}</p>
+      <p className={`text-sm mb-1 ${darkMode ? "text-gray-400" : "text-slate-500"}`}>{label}</p>
+      <p
+        className={`font-medium ${capitalize ? "capitalize" : ""} ${
+          isStatus
+            ? cliente.estado === "activo"
+              ? darkMode
+                ? "text-green-400"
+                : "text-green-600"
+              : darkMode
+                ? "text-red-400"
+                : "text-red-600"
+            : darkMode
+              ? "text-white"
+              : "text-slate-800"
+        }`}
+      >
+        {value}
+      </p>
     </div>
   )
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm flex items-center justify-center z-50">
-      <div className="bg-gray-900 p-6 rounded-xl shadow-2xl w-[600px] border-2 border-orange-500 animate-fade-in">
-        <h3 className="text-xl font-bold text-white mb-4 border-b border-gray-700 pb-2">Detalles del Cliente</h3>
-
-        <div className="grid grid-cols-2 gap-4 mb-6">
-          {clienteDetails.map((detail, index) => (
-            <DetailField
-              key={index}
-              label={detail.label}
-              value={detail.value}
-              className={detail.className}
-              capitalize={detail.capitalize}
-            />
-          ))}
-        </div>
-
-        <div className="flex justify-end space-x-3">
-          <button
-            onClick={(e) => {
-              e.preventDefault()
-              e.stopPropagation()
-              onClose() // Primero cerramos el modal de detalles
-              // Pequeño retraso para asegurar que el modal se cierre antes de abrir el de edición
-              setTimeout(() => {
-                onEdit() // Luego abrimos el modal de edición
-              }, 100)
-            }}
-            className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors flex items-center gap-2 border border-orange-500"
-          >
-            <Edit size={16} />
-            Editar
-          </button>
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <div
+        className={`rounded-xl shadow-xl w-full max-w-2xl transform transition-all ${
+          darkMode ? "bg-gray-800 border border-gray-700" : "bg-white border-slate-200"
+        }`}
+      >
+        {/* Header */}
+        <div className={`flex justify-between items-center p-6 border-b ${darkMode ? "border-gray-700" : "border-slate-200"}`}>
+          <h2 className={`text-xl font-semibold flex items-center gap-3 ${darkMode ? "text-white" : "text-slate-900"}`}>
+            <span className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white p-2 rounded-lg shadow-lg">
+              <User size={18} />
+            </span>
+            Detalles del Cliente
+          </h2>
           <button
             onClick={onClose}
-            className="px-4 py-2 bg-gray-800 text-white rounded-lg hover:bg-gray-700 transition-colors border border-gray-700"
+            className={`p-2 rounded-full transition-all ${
+              darkMode ? "text-gray-400 hover:text-gray-200 hover:bg-gray-700" : "text-slate-500 hover:text-slate-700 hover:bg-slate-100"
+            }`}
+            title="Cerrar"
           >
-            Cerrar
+            <X size={20} />
           </button>
+        </div>
+
+        {/* Content */}
+        <div className="p-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4 mb-6">
+            {clienteDetails.map((detail) => (
+              <DetailField
+                key={detail.label}
+                label={detail.label}
+                value={detail.value}
+                isStatus={detail.isStatus}
+                capitalize={detail.capitalize}
+              />
+            ))}
+          </div>
+
+          {/* Footer */}
+          <div className={`flex justify-end space-x-3 pt-4 border-t ${darkMode ? "border-gray-700" : "border-slate-200"}`}>
+            <button
+              onClick={onClose}
+              className={`px-6 py-2.5 rounded-lg border transition-all duration-200 ${
+                darkMode
+                  ? "border-gray-600 text-gray-300 hover:bg-gray-700 hover:text-white"
+                  : "border-slate-300 text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+              }`}
+            >
+              Cerrar
+            </button>
+            <button
+              onClick={() => {
+                onClose()
+                setTimeout(() => onEdit(), 100)
+              }}
+              className="flex items-center gap-2 px-6 py-2.5 rounded-lg bg-gradient-to-r from-indigo-500 to-purple-600 text-white hover:from-indigo-600 hover:to-purple-700 transition-all duration-200 shadow-lg shadow-indigo-500/20 hover:shadow-indigo-500/30"
+            >
+              <Edit size={16} />
+              Editar
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -90,4 +127,3 @@ const ClienteDetailModal = ({ cliente, onClose, onEdit }) => {
 }
 
 export default ClienteDetailModal
-

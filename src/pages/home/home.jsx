@@ -79,7 +79,8 @@ export function Home() {
             producto.descripcion.toLowerCase().includes(searchQuery.toLowerCase())
         const matchesCategory = selectedCategory === "all" ||
             (producto.Categorium && producto.Categorium.nombre === selectedCategory)
-        return matchesSearch && matchesCategory
+        const isActive = producto.estado === "activo"
+        return matchesSearch && matchesCategory && isActive
     })
 
     if (loading) {
@@ -270,8 +271,8 @@ export function Home() {
                                 <button
                                     onClick={() => setViewMode("grid")}
                                     className={`p-2 rounded-lg transition-colors ${viewMode === "grid"
-                                            ? "bg-indigo-100 text-indigo-600"
-                                            : "text-slate-600 hover:bg-slate-100"
+                                        ? "bg-indigo-100 text-indigo-600"
+                                        : "text-slate-600 hover:bg-slate-100"
                                         }`}
                                 >
                                     <Grid className="w-5 h-5" />
@@ -279,8 +280,8 @@ export function Home() {
                                 <button
                                     onClick={() => setViewMode("list")}
                                     className={`p-2 rounded-lg transition-colors ${viewMode === "list"
-                                            ? "bg-indigo-100 text-indigo-600"
-                                            : "text-slate-600 hover:bg-slate-100"
+                                        ? "bg-indigo-100 text-indigo-600"
+                                        : "text-slate-600 hover:bg-slate-100"
                                         }`}
                                 >
                                     <List className="w-5 h-5" />
@@ -317,8 +318,8 @@ export function Home() {
                             >
                                 {/* Imagen del producto */}
                                 <div className={`relative overflow-hidden ${viewMode === "list"
-                                        ? "w-24 h-24 rounded-xl flex-shrink-0"
-                                        : "aspect-square"
+                                    ? "w-24 h-24 rounded-xl flex-shrink-0"
+                                    : "aspect-square"
                                     }`}>
                                     {producto.imagen ? (
                                         <img
@@ -341,8 +342,8 @@ export function Home() {
                                     >
                                         <Heart
                                             className={`w-4 h-4 ${wishlist.includes(producto.id)
-                                                    ? "text-red-500 fill-current"
-                                                    : "text-slate-400"
+                                                ? "text-red-500 fill-current"
+                                                : "text-slate-400"
                                                 }`}
                                         />
                                     </button>
@@ -371,7 +372,7 @@ export function Home() {
                                         <div className={`${viewMode === "list" ? "ml-6 text-right" : ""}`}>
                                             <div className="flex items-center justify-between mb-4">
                                                 <span className="text-2xl font-bold text-slate-900">
-                                                    ${producto.precio}
+                                                    ${parseFloat(producto.precio.replace(",", "."))}
                                                 </span>
                                             </div>
 

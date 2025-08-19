@@ -277,7 +277,7 @@ const ClienteList = ({ clientes = [], onEdit, onDelete, onRefresh }) => {
                   darkMode ? 'text-gray-400' : 'text-slate-500'
                 }`}>
                   <div className="flex flex-col items-center">
-                    <Users size={48} className={`mb-2 ${darkMode ? 'text-gray-600' : 'text-slate-300'}`} />
+                    {/* <Users size={48} className={`mb-2 ${darkMode ? 'text-gray-600' : 'text-slate-300'}`} /> */}
                     <p className="text-lg font-semibold mb-1">No se encontraron clientes</p>
                     <p className="text-sm">Intenta con otros términos de búsqueda</p>
                   </div>

@@ -3,10 +3,12 @@
 import { useState, useEffect } from "react"
 import { X, Save, User, Mail, Lock, Shield, CheckCircle, AlertCircle, CreditCard } from "lucide-react"
 import { createUsuario, updateUsuario, verificarDuplicado, fetchRoles } from "../api/usuarioService"
+import { useTheme } from "../../../components/layout/ThemeContext.jsx"
 
 import { toast } from "react-toastify"
 
 const UserForm = ({ usuario, onClose, onSave }) => {
+  const { darkMode } = useTheme()
   const initialFormData = {
     nombre: "",
     email: "",
@@ -223,7 +225,7 @@ const UserForm = ({ usuario, onClose, onSave }) => {
         label: "Nombre Completo",
         value: formData.nombre,
         error: errors.nombre,
-        icon: <User size={18} className="text-orange-400" />,
+        icon: <User size={18} className="text-indigo-500" />,
       },
       {
         type: "email",
@@ -231,7 +233,7 @@ const UserForm = ({ usuario, onClose, onSave }) => {
         label: "Correo Electrónico",
         value: formData.email,
         error: errors.email,
-        icon: <Mail size={18} className="text-orange-400" />,
+        icon: <Mail size={18} className="text-indigo-500" />,
       },
       {
         type: "text",
@@ -239,7 +241,7 @@ const UserForm = ({ usuario, onClose, onSave }) => {
         label: "Cédula",
         value: formData.cedula,
         error: errors.cedula,
-        icon: <CreditCard size={18} className="text-orange-400" />,
+        icon: <CreditCard size={18} className="text-indigo-500" />,
         maxLength: 15,
         pattern: "[0-9]*",
         inputMode: "numeric",
@@ -252,7 +254,7 @@ const UserForm = ({ usuario, onClose, onSave }) => {
         label: usuario ? "Nueva Contraseña (opcional)" : "Contraseña",
         value: formData.password,
         error: errors.password,
-        icon: <Lock size={18} className="text-orange-400" />,
+        icon: <Lock size={18} className="text-indigo-500" />,
         required: !usuario,
       },
       {
@@ -261,7 +263,7 @@ const UserForm = ({ usuario, onClose, onSave }) => {
         label: "Rol",
         value: formData.id_rol,
         error: errors.id_rol,
-        icon: <Shield size={18} className="text-orange-400" />,
+        icon: <Shield size={18} className="text-indigo-500" />,
         options: roles.length > 0 ? roles.map((rol) => ({ value: rol.id, label: rol.nombre })) : [],
         loading: loading,
       },
@@ -275,10 +277,10 @@ const UserForm = ({ usuario, onClose, onSave }) => {
           { value: "inactivo", label: "Inactivo" },
         ],
         icon:
-        formData.estado === "activo" ? (
-            <CheckCircle size={18} className="text-green-400" />
+          formData.estado === "activo" ? (
+            <CheckCircle size={18} className="text-green-500" />
           ) : (
-            <AlertCircle size={18} className="text-red-400" />
+            <AlertCircle size={18} className="text-red-500" />
           ),
       },
     ],
@@ -363,77 +365,154 @@ const UserForm = ({ usuario, onClose, onSave }) => {
   )
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm flex items-center justify-center z-50 p-4 overflow-y-auto">
-      <div className="bg-gray-900 rounded-xl shadow-2xl w-full max-w-md border-t-4 border-orange-500 animate-fade-in">
-        <div className="flex justify-between items-center p-4 border-b border-gray-800 bg-gray-950">
-          <h2 className="text-lg font-bold text-white flex items-center">
-            <span className="bg-orange-500 text-white p-1.5 rounded-lg mr-2">
-              <User size={16} />
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4 overflow-y-auto">
+      <div className={`rounded-xl shadow-xl w-full max-w-md transform transition-all ${
+          darkMode
+            ? 'bg-gray-800 border border-gray-700'
+            : 'bg-white border border-slate-200'
+        }`}>
+        {/* Header */}
+        <div className={`flex justify-between items-center p-6 border-b ${
+            darkMode ? 'border-gray-700' : 'border-slate-200'
+          }`}>
+          <h2 className={`text-xl font-semibold flex items-center gap-3 ${
+              darkMode ? 'text-white' : 'text-slate-900'
+            }`}>
+            <span className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white p-2 rounded-lg shadow-lg">
+              <User size={18} />
             </span>
             {usuario ? "Editar Usuario" : "Registrar Usuario"}
           </h2>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-white hover:rotate-90 transition-all bg-gray-800 p-1.5 rounded-full"
-            title="Volver"
+            className={`p-2 rounded-full transition-all ${
+              darkMode
+                ? 'text-gray-400 hover:text-gray-200 hover:bg-gray-700'
+                : 'text-slate-500 hover:text-slate-700 hover:bg-slate-100'
+            }`}
+            title="Cerrar"
           >
             <X size={20} />
           </button>
         </div>
 
-        <div className="p-4">
+        <div className="p-6">
+          {/* Error Message */}
           {submitError && (
-            <div className="bg-red-900 text-white p-3 rounded-lg mb-4 animate-pulse border border-red-500 text-sm">
+            <div className={`p-4 rounded-lg mb-6 border text-sm ${
+                darkMode
+                  ? 'bg-red-900/20 border-red-500/30 text-red-300'
+                  : 'bg-red-50 border-red-200 text-red-700'
+              }`}>
               {submitError}
             </div>
           )}
 
-          {showSuccessMessage && (
-            <div className="bg-green-900 text-white p-3 rounded-lg mb-4 border border-green-500 text-sm flex items-center">
-              <CheckCircle size={18} className="mr-2 text-green-400" />
-              Usuario actualizado correctamente
-            </div>
-          )}
+          {/* Steps */}
+          <div className="flex justify-center mb-8 px-4">
+            {Array.from({ length: totalSteps }, (_, i) => i + 1).map((step) => (
+              <div key={step} className="flex items-center">
+                <div
+                  className={`w-10 h-10 rounded-full flex items-center justify-center font-semibold text-sm
+                  transition-all duration-300 ${
+                    currentStep === step
+                      ? "bg-gradient-to-r from-indigo-500 to-purple-600 text-white shadow-lg shadow-indigo-500/30"
+                      : currentStep > step
+                        ? "bg-gradient-to-r from-green-500 to-green-600 text-white shadow-lg shadow-green-500/30"
+                        : darkMode
+                          ? "bg-gray-700 text-gray-400"
+                          : "bg-slate-100 text-slate-400"
+                  }`}
+                >
+                  {currentStep > step ? "✓" : step}
+                </div>
+                {step < totalSteps && (
+                  <div className={`w-16 h-1 mx-2 rounded-full transition-all duration-300 ${
+                    currentStep > step
+                      ? "bg-gradient-to-r from-green-500 to-green-600"
+                      : darkMode
+                        ? "bg-gray-700"
+                        : "bg-slate-200"
+                  }`} />
+                )}
+              </div>
+            ))}
+          </div>
 
-          <FormSteps />
+          {/* Step Title */}
+          <div className="text-center mb-6">
+            <h3 className={`text-lg font-semibold mb-2 ${
+                darkMode ? 'text-white' : 'text-slate-900'
+              }`}>
+              {currentStep === 1 ? "Información Personal" : "Rol y Contraseña"}
+            </h3>
+            <p className={`text-sm ${
+                darkMode ? 'text-gray-400' : 'text-slate-500'
+              }`}>
+              {currentStep === 1
+                ? "Datos básicos del usuario"
+                : "Información de rol y seguridad"}
+            </p>
+          </div>
 
-          <div>
+          {/* Form Fields */}
+          <div className="space-y-4">
             {formFieldsByStep[currentStep].map(renderFormField)}
+          </div>
 
-            <div className="flex justify-between mt-6">
-              {currentStep > 1 ? (
-                <button
-                  type="button"
-                  onClick={prevStep}
-                  className="bg-gray-700 text-white px-4 py-2 rounded-lg hover:bg-gray-600"
-                >
-                  Atrás
-                </button>
-              ) : (
-                <div />
-              )}
+          {/* Buttons */}
+          <div className="flex justify-between mt-8 gap-4">
+            {currentStep > 1 ? (
+              <button
+                type="button"
+                onClick={prevStep}
+                className={`px-6 py-2.5 rounded-lg border transition-all duration-200 ${
+                  darkMode
+                    ? 'border-gray-600 text-gray-300 hover:bg-gray-700 hover:text-white'
+                    : 'border-slate-300 text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                }`}
+              >
+                Atrás
+              </button>
+            ) : (
+              <div />
+            )}
 
-              {currentStep < totalSteps ? (
-                <button
-                  type="button"
-                  onClick={nextStep}
-                  className="bg-orange-500 text-white px-4 py-2 rounded-lg hover:bg-orange-600"
-                >
-                  Siguiente
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  onClick={submitForm}
-                  disabled={isSubmitting}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-lg text-white ${isSubmitting ? "bg-gray-600" : "bg-green-600 hover:bg-green-700"
-                    }`}
-                >
+            {currentStep < totalSteps ? (
+              <button
+                type="button"
+                onClick={nextStep}
+                className="px-6 py-2.5 rounded-lg bg-gradient-to-r from-indigo-500 to-purple-600
+                       text-white hover:from-indigo-600 hover:to-purple-700
+                       transition-all duration-200 shadow-lg shadow-indigo-500/20 hover:shadow-indigo-500/30"
+              >
+                Siguiente
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={submitForm}
+                disabled={isSubmitting}
+                className={`flex items-center gap-2 px-6 py-2.5 rounded-lg text-white transition-all duration-200 ${
+                  isSubmitting
+                    ? darkMode
+                      ? "bg-gray-600 cursor-not-allowed"
+                      : "bg-slate-400 cursor-not-allowed"
+                    : "bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 shadow-lg shadow-green-500/20 hover:shadow-green-500/30"
+                }`}
+              >
+                {isSubmitting ? (
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                ) : (
                   <Save size={18} />
-                  {usuario ? "Actualizar" : "Guardar"}
-                </button>
-              )}
-            </div>
+                )}
+                {isSubmitting
+                  ? "Guardando..."
+                  : usuario
+                    ? "Actualizar"
+                    : "Guardar"}
+              </button>
+            )}
           </div>
         </div>
       </div>

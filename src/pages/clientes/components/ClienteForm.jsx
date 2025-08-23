@@ -18,7 +18,6 @@ const ClienteForm = ({ cliente, onClose, onSave }) => {
     correoElectronico: "",
     telefono: "",
     direccion: "",
-    password: "",
     estado: "activo",
   }
 
@@ -45,7 +44,6 @@ const ClienteForm = ({ cliente, onClose, onSave }) => {
         correoElectronico: cliente.correoElectronico || "",
         telefono: cliente.telefono || "",
         direccion: cliente.direccion || "",
-        password: "",
         estado: cliente.estado || "activo",
       })
     }
@@ -112,18 +110,13 @@ const ClienteForm = ({ cliente, onClose, onSave }) => {
       }
       return ""
     },
-    password: (value) => {
-      if (!cliente && !value.trim()) return "La contraseña es obligatoria"
-      if (value && value.length < 6) return "La contraseña debe tener al menos 6 caracteres"
-      return ""
-    },
   }
 
   const validateCurrentStep = () => {
     const newErrors = {}
     const fieldsToValidate =
       currentStep === 1
-        ? ["nombreCompleto", "tipoDocumento", "documentoIdentidad", "correoElectronico", "password"]
+        ? ["nombreCompleto", "tipoDocumento", "documentoIdentidad", "correoElectronico"]
         : ["telefono", "direccion"]
 
     fieldsToValidate.forEach((field) => {
@@ -163,9 +156,6 @@ const ClienteForm = ({ cliente, onClose, onSave }) => {
     try {
       let savedCliente
       let dataToSend = { ...formData }
-      if (cliente && !formData.password) {
-        delete dataToSend.password
-      }
       if (cliente) {
         savedCliente = await updateCliente(cliente.id, dataToSend)
         toast.success(`Cliente ${formData.nombreCompleto} actualizado exitosamente`)
@@ -245,18 +235,6 @@ const ClienteForm = ({ cliente, onClose, onSave }) => {
         value: formData.correoElectronico,
         error: errors.correoElectronico,
         icon: <Mail size={18} className="text-indigo-500" />,
-      },
-      {
-        type: "password",
-        name: "password",
-        label: "Contraseña",
-        value: formData.password,
-        error: errors.password,
-        icon: <Lock size={18} className="text-indigo-500" />,
-        placeholder: cliente
-          ? "Dejar en blanco para mantener la contraseña actual"
-          : "Mínimo 6 caracteres",
-        autoComplete: "new-password",
       },
     ],
     2: [

@@ -47,6 +47,7 @@ const Usuario = () => {
 
   const handleEditClick = (usuario) => {
     setCurrentUsuario(usuario)
+    console.log(usuario)
     setShowForm(true)
   }
 
@@ -82,10 +83,6 @@ const Usuario = () => {
       <div className={`rounded-xl shadow-xl p-6 border-l-4 border-indigo-500 ${darkMode ? 'bg-gradient-to-br from-gray-800 to-gray-900' : 'bg-gradient-to-br from-white to-slate-50'}`}>
         <div className="flex justify-between items-center mb-6">
           <div className="flex items-center">
-            {/* Cambiar de orange a indigo para mantener consistencia */}
-            <div className="bg-indigo-500 p-3 rounded-lg mr-4 shadow-lg shadow-indigo-500/20">
-              <Users size={24} className="text-white" />
-            </div>
             <div>
               <h1 className={`text-2xl font-bold ${darkMode ? 'text-white' : 'text-slate-900'}`}>
                 Gestión de Usuarios

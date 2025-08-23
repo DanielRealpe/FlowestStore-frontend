@@ -49,6 +49,8 @@ export const loginUsuario = async (credentials) => {
 export const logoutUsuario = async () => {
   try {
     const response = await axios.post(`${VITE_API_URL}/autenticacion/logout`);
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
     return response.data;
   } catch (error) {
     console.error("Error al cerrar sesión:", error);
@@ -74,6 +76,7 @@ export const getUsuarioAutenticado = async () => {
         },
       }
     );
+    console.log("USUARIO DEL BACKKKK", response.data.data)
     return response.data.data;
   } catch (error) {
     console.error("Error al obtener usuario autenticado:", error);

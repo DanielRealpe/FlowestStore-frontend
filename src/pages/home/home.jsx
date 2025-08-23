@@ -5,6 +5,7 @@ import { fetchProductos } from "../productos/api/ProductoService"
 import { ShoppingCart, User, LogOut, Search, Star, Heart, Filter, Grid, List, ChevronDown, Menu, X } from "lucide-react"
 import { useCart } from "./cartContext"
 import { CartSidebar } from "./cartSidebar"
+import { ShoppingBag } from "lucide-react"; // 👈 Añade este import
 import { useAuth } from "../usuarios/context/AuthContext"
 
 export function Home() {
@@ -14,7 +15,7 @@ export function Home() {
     const [productos, setProductos] = useState([])
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState(null)
-    const { user, isAuthenticated, signout } = useAuth()
+    const { user, isAuthenticated, signout, tipo } = useAuth()
     const [dropdownOpen, setDropdownOpen] = useState(false)
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
     const [searchQuery, setSearchQuery] = useState("")
@@ -63,6 +64,25 @@ export function Home() {
                 : [...prev, productId]
         )
     }
+
+    // 👇 2. CREA LA NUEVA FUNCIÓN PARA MANEJAR LA LÓGICA
+    const handleAddToCart = (producto) => {
+        if (isAuthenticated) {
+            // Si está autenticado, agrega el item al carrito
+            dispatch({
+                type: "ADD_ITEM",
+                payload: {
+                    id: producto.id,
+                    nombre: producto.nombre,
+                    precio: producto.precio,
+                    imagen: producto.imagenUrl, // Asegúrate de usar imagenUrl
+                }
+            });
+        } else {
+            // Si no, redirige a la página de login
+            navigate("/login");
+        }
+    };
 
     // Agrupar productos por categoría
     const categoriasUnicas = [
@@ -137,10 +157,23 @@ export function Home() {
                         </div>
 
                         {/* Acciones del header */}
-                        <div className="flex items-center space-x-4">
+                        <div className="flex flex-row items-center space-x-4">
                             {/* Usuario autenticado */}
                             {isAuthenticated && user ? (
                                 <div className="relative" ref={dropdownRef}>
+                                    {/* 👇 AÑADE ESTA LÓGICA CONDICIONAL */}
+                                    {tipo === 'cliente' && (
+                                        <button
+                                            onClick={() => {
+                                                setDropdownOpen(false);
+                                                navigate('/mis-pedidos');
+                                            }}
+                                            className="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 flex items-center space-x-2"
+                                        >
+                                            <ShoppingBag className="w-4 h-4" />
+                                            <span>Mis Pedidos</span>
+                                        </button>
+                                    )}
                                     <button
                                         onClick={() => setDropdownOpen(!dropdownOpen)}
                                         className="flex items-center space-x-2 px-3 py-2 rounded-full hover:bg-slate-100 transition-colors"
@@ -321,9 +354,11 @@ export function Home() {
                                     ? "w-24 h-24 rounded-xl flex-shrink-0"
                                     : "aspect-square"
                                     }`}>
-                                    {producto.imagen ? (
+                                    {/* 👇 CORRECCIÓN 1: Usar producto.imagenUrl */}
+                                    {producto.imagenUrl ? (
                                         <img
-                                            src={producto.imagen}
+                                            // 👇 CORRECCIÓN 2: Usar producto.imagenUrl
+                                            src={producto.imagenUrl}
                                             alt={producto.nombre}
                                             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                                         />
@@ -377,15 +412,8 @@ export function Home() {
                                             </div>
 
                                             <button
-                                                onClick={() => dispatch({
-                                                    type: "ADD_ITEM",
-                                                    payload: {
-                                                        id: producto.id,
-                                                        nombre: producto.nombre,
-                                                        precio: producto.precio,
-                                                        imagen: producto.imagen,
-                                                    }
-                                                })}
+                                                // 👇 3. ACTUALIZA EL ONCLICK PARA USAR LA NUEVA FUNCIÓN
+                                                onClick={() => handleAddToCart(producto)}
                                                 className="w-full px-6 py-3 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-colors font-medium shadow-sm hover:shadow-md"
                                             >
                                                 Agregar al carrito

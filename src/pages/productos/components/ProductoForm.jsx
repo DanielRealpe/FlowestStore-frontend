@@ -1,3 +1,5 @@
+// --- START OF FILE ProductoForm.jsx (MODIFICADO) ---
+
 "use client"
 
 import { useState, useEffect } from "react"
@@ -5,9 +7,9 @@ import { X, Save, Package, DollarSign, Tag, AlignLeft, CheckCircle, AlertCircle,
 import { createProducto, updateProducto } from "../api/ProductoService"
 import { fetchCategorias } from "../../categorias/api/categoriaService"
 import { toast } from "react-toastify"
-import { useTheme } from "../../../components/layout/ThemeContext.jsx" // Asegúrate que la ruta sea correcta
-import FormField from "../../clientes/components/form/FormField" // Reutilizando el componente estandarizado
-import SelectField from "../../clientes/components/form/SelectField" // Reutilizando el componente estandarizado
+import { useTheme } from "../../../components/layout/ThemeContext.jsx"
+import FormField from "../../clientes/components/form/FormField"
+import SelectField from "../../clientes/components/form/SelectField"
 
 const ProductoForm = ({ producto, onClose, onSave }) => {
   const { darkMode } = useTheme()
@@ -17,15 +19,15 @@ const ProductoForm = ({ producto, onClose, onSave }) => {
     descripcion: "",
     precio: "",
     Id_Categoria: "",
-    imagenUrl: "",
     estado: "activo",
   }
 
   const [formData, setFormData] = useState(initialFormData)
+  const [imageFile, setImageFile] = useState(null) // 👈 1. Estado para el archivo de imagen
+  const [imagePreview, setImagePreview] = useState("")
   const [errors, setErrors] = useState({})
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState("")
-  const [imagePreview, setImagePreview] = useState("")
   const [currentStep, setCurrentStep] = useState(1)
   const totalSteps = 2
   const [categorias, setCategorias] = useState([])
@@ -52,10 +54,11 @@ const ProductoForm = ({ producto, onClose, onSave }) => {
         descripcion: producto.descripcion || "",
         precio: producto.precio?.toString() || "",
         Id_Categoria: producto.Id_Categoria || "",
-        imagenUrl: producto.imagenUrl || "",
         estado: producto.estado || "activo",
       })
-      if (producto.imagenUrl) setImagePreview(producto.imagenUrl)
+      if (producto.imagenUrl) {
+        setImagePreview(producto.imagenUrl) // Usar la URL existente para la vista previa
+      }
     }
   }, [producto])
 
@@ -71,16 +74,18 @@ const ProductoForm = ({ producto, onClose, onSave }) => {
   const handleImageChange = (e) => {
     const file = e.target.files[0]
     if (file) {
+      // 👈 2. Guardar el archivo y generar la vista previa
+      setImageFile(file) // Guardamos el objeto File
       const reader = new FileReader()
       reader.onloadend = () => {
-        setImagePreview(reader.result)
-        setFormData((prev) => ({ ...prev, imagenUrl: reader.result }))
+        setImagePreview(reader.result) // Usamos el resultado para la vista previa
       }
       reader.readAsDataURL(file)
     }
   }
 
   const validateStep = (step) => {
+    // ... (sin cambios en la validación)
     const newErrors = {}
     if (step === 1) {
       if (!formData.nombre.trim()) newErrors.nombre = "El nombre es obligatorio"
@@ -105,17 +110,26 @@ const ProductoForm = ({ producto, onClose, onSave }) => {
     }
     setIsSubmitting(true)
     setSubmitError("")
+
+    // 👈 3. Construir el objeto FormData
+    const formDataToSend = new FormData()
+    formDataToSend.append("nombre", formData.nombre)
+    formDataToSend.append("descripcion", formData.descripcion)
+    formDataToSend.append("precio", parseFloat(formData.precio))
+    formDataToSend.append("Id_Categoria", Number(formData.Id_Categoria))
+    formDataToSend.append("estado", formData.estado)
+
+    if (imageFile) {
+      // El nombre 'imagen' debe coincidir con el del backend: upload.single('imagen')
+      formDataToSend.append("imagen", imageFile)
+    }
+
     try {
-      const productoData = {
-        ...formData,
-        precio: parseFloat(formData.precio),
-        Id_Categoria: Number(formData.Id_Categoria),
-      }
       if (producto && producto.id) {
-        await updateProducto(producto.id, productoData)
+        await updateProducto(producto.id, formDataToSend) // Enviar FormData
         toast.success(`Producto "${formData.nombre}" actualizado exitosamente`)
       } else {
-        await createProducto(productoData)
+        await createProducto(formDataToSend) // Enviar FormData
         toast.success(`Producto "${formData.nombre}" creado exitosamente`)
       }
       onSave()
@@ -138,6 +152,8 @@ const ProductoForm = ({ producto, onClose, onSave }) => {
 
   const prevStep = () => setCurrentStep((prev) => Math.max(prev - 1, 1))
 
+  // --- El resto del JSX no necesita cambios ---
+  // ... (pega aquí el resto de tu componente JSX desde el `return`)
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4 overflow-y-auto">
       <div
@@ -155,8 +171,8 @@ const ProductoForm = ({ producto, onClose, onSave }) => {
           <button
             onClick={onClose}
             className={`p-2 rounded-full transition-all ${darkMode
-                ? "text-gray-400 hover:text-gray-200 hover:bg-gray-700"
-                : "text-slate-500 hover:text-slate-700 hover:bg-slate-100"
+              ? "text-gray-400 hover:text-gray-200 hover:bg-gray-700"
+              : "text-slate-500 hover:text-slate-700 hover:bg-slate-100"
               }`}
             title="Cerrar"
           >
@@ -168,8 +184,8 @@ const ProductoForm = ({ producto, onClose, onSave }) => {
           {submitError && (
             <div
               className={`p-4 rounded-lg mb-6 border text-sm ${darkMode
-                  ? "bg-red-900/20 border-red-500/30 text-red-300"
-                  : "bg-red-50 border-red-200 text-red-700"
+                ? "bg-red-900/20 border-red-500/30 text-red-300"
+                : "bg-red-50 border-red-200 text-red-700"
                 }`}
             >
               {submitError}
@@ -182,12 +198,12 @@ const ProductoForm = ({ producto, onClose, onSave }) => {
               <div key={step} className="flex items-center">
                 <div
                   className={`w-10 h-10 rounded-full flex items-center justify-center font-semibold text-sm transition-all duration-300 ${currentStep === step
-                      ? "bg-gradient-to-r from-indigo-500 to-purple-600 text-white shadow-lg shadow-indigo-500/30"
-                      : currentStep > step
-                        ? "bg-gradient-to-r from-green-500 to-green-600 text-white shadow-lg shadow-green-500/30"
-                        : darkMode
-                          ? "bg-gray-700 text-gray-400"
-                          : "bg-slate-100 text-slate-400"
+                    ? "bg-gradient-to-r from-indigo-500 to-purple-600 text-white shadow-lg shadow-indigo-500/30"
+                    : currentStep > step
+                      ? "bg-gradient-to-r from-green-500 to-green-600 text-white shadow-lg shadow-green-500/30"
+                      : darkMode
+                        ? "bg-gray-700 text-gray-400"
+                        : "bg-slate-100 text-slate-400"
                     }`}
                 >
                   {currentStep > step ? "✓" : step}
@@ -195,10 +211,10 @@ const ProductoForm = ({ producto, onClose, onSave }) => {
                 {step < totalSteps && (
                   <div
                     className={`w-16 h-1 mx-2 rounded-full transition-all duration-300 ${currentStep > step
-                        ? "bg-gradient-to-r from-green-500 to-green-600"
-                        : darkMode
-                          ? "bg-gray-700"
-                          : "bg-slate-200"
+                      ? "bg-gradient-to-r from-green-500 to-green-600"
+                      : darkMode
+                        ? "bg-gray-700"
+                        : "bg-slate-200"
                       }`}
                   />
                 )}
@@ -304,8 +320,8 @@ const ProductoForm = ({ producto, onClose, onSave }) => {
                         <label
                           htmlFor="image-upload"
                           className={`cursor-pointer inline-block text-sm font-semibold px-4 py-2 rounded-lg border transition-colors ${darkMode
-                              ? "bg-gray-700 border-gray-600 text-gray-300 hover:bg-gray-600"
-                              : "bg-white border-slate-300 text-slate-700 hover:bg-slate-50"
+                            ? "bg-gray-700 border-gray-600 text-gray-300 hover:bg-gray-600"
+                            : "bg-white border-slate-300 text-slate-700 hover:bg-slate-50"
                             }`}
                         >
                           Seleccionar...
@@ -324,8 +340,8 @@ const ProductoForm = ({ producto, onClose, onSave }) => {
                   type="button"
                   onClick={prevStep}
                   className={`px-6 py-2.5 rounded-lg border transition-all duration-200 ${darkMode
-                      ? "border-gray-600 text-gray-300 hover:bg-gray-700 hover:text-white"
-                      : "border-slate-300 text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+                    ? "border-gray-600 text-gray-300 hover:bg-gray-700 hover:text-white"
+                    : "border-slate-300 text-slate-600 hover:bg-slate-50 hover:text-slate-900"
                     }`}
                 >
                   Atrás
@@ -348,10 +364,10 @@ const ProductoForm = ({ producto, onClose, onSave }) => {
                   onClick={handleSubmit}
                   disabled={isSubmitting}
                   className={`flex items-center gap-2 px-6 py-2.5 rounded-lg text-white transition-all duration-200 ${isSubmitting
-                      ? darkMode
-                        ? "bg-gray-600 cursor-not-allowed"
-                        : "bg-slate-400 cursor-not-allowed"
-                      : "bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 shadow-lg shadow-green-500/20 hover:shadow-green-500/30"
+                    ? darkMode
+                      ? "bg-gray-600 cursor-not-allowed"
+                      : "bg-slate-400 cursor-not-allowed"
+                    : "bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 shadow-lg shadow-green-500/20 hover:shadow-green-500/30"
                     }`}
                 >
                   {isSubmitting ? (

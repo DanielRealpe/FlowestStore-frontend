@@ -1,53 +1,93 @@
 "use client"
 
-import { Trash2 } from "lucide-react"
+import { Trash2, X } from "lucide-react"
+import { useTheme } from "../../../components/layout/ThemeContext.jsx" // Ajusta la ruta según tu estructura
 
 const DeleteConfirmModal = ({
   item,
   onConfirm,
   onCancel,
-  itemName = "item",
+  itemName = "el elemento",
   itemField = "name",
   isLoading = false,
 }) => {
+  const { darkMode } = useTheme()
+
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm flex items-center justify-center z-50">
-      <div className="bg-gray-900 p-6 rounded-xl shadow-2xl w-96 border-2 border-red-500 animate-fade-in">
-        <div className="flex items-center mb-4 text-red-500">
-          <Trash2 size={24} className="mr-2" />
-          <h3 className="text-xl font-bold text-white">Confirmar eliminación</h3>
-        </div>
-
-        <p className="text-gray-300 mb-6">
-          ¿Estás seguro de que deseas eliminar {itemName}{" "}
-          <span className="font-semibold text-red-400">{item?.[itemField]}</span>? Esta acción no se puede deshacer.
-        </p>
-
-        <div className="flex justify-end space-x-3">
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <div
+        className={`rounded-xl shadow-xl w-full max-w-md transform transition-all border-t-4 border-red-500 ${
+          darkMode ? "bg-gray-800 border border-gray-700" : "bg-white border-slate-200"
+        }`}
+      >
+        {/* Header */}
+        <div className="flex justify-between items-start p-6">
+          <div className="flex items-center">
+            <div className={`p-3 rounded-full mr-4 ${darkMode ? "bg-red-900/30" : "bg-red-100"}`}>
+              <Trash2 className={`h-6 w-6 ${darkMode ? "text-red-400" : "text-red-600"}`} />
+            </div>
+            <div>
+              <h3 className={`text-xl font-semibold ${darkMode ? "text-white" : "text-slate-900"}`}>
+                Confirmar Eliminación
+              </h3>
+            </div>
+          </div>
           <button
             onClick={onCancel}
-            className="px-4 py-2 bg-gray-800 text-white rounded-lg hover:bg-gray-700 transition-colors border border-gray-700"
             disabled={isLoading}
+            className={`p-2 -mt-2 -mr-2 rounded-full transition-all ${
+              darkMode ? "text-gray-400 hover:text-gray-200 hover:bg-gray-700" : "text-slate-500 hover:text-slate-700 hover:bg-slate-100"
+            }`}
+            title="Cerrar"
           >
-            Cancelar
+            <X size={20} />
           </button>
-          <button
-            onClick={onConfirm}
-            className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors border border-red-500 flex items-center"
-            disabled={isLoading}
-          >
-            {isLoading ? (
-              <>
-                <span className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full mr-2"></span>
-                Eliminando...
-              </>
-            ) : (
-              <>
-                <Trash2 size={16} className="mr-2" />
-                Eliminar
-              </>
+        </div>
+
+        {/* Content */}
+        <div className="px-6 pb-6">
+          <p className={`mb-6 ${darkMode ? "text-gray-300" : "text-slate-600"}`}>
+            ¿Estás seguro de que deseas eliminar {itemName}{" "}
+            {item?.[itemField] && (
+              <span className={`font-semibold ${darkMode ? "text-red-300" : "text-red-500"}`}>
+                "{item[itemField]}"
+              </span>
             )}
-          </button>
+            ? Esta acción no se puede deshacer.
+          </p>
+
+          {/* Footer */}
+          <div className="flex justify-end space-x-3">
+            <button
+              onClick={onCancel}
+              disabled={isLoading}
+              className={`px-6 py-2.5 rounded-lg border transition-all duration-200 disabled:opacity-50 ${
+                darkMode
+                  ? "border-gray-600 text-gray-300 hover:bg-gray-700 hover:text-white"
+                  : "border-slate-300 text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+              }`}
+            >
+              Cancelar
+            </button>
+            <button
+              onClick={onConfirm}
+              disabled={isLoading}
+              className={`flex items-center justify-center gap-2 px-6 py-2.5 rounded-lg text-white transition-all duration-200 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed ${
+                isLoading
+                  ? darkMode
+                    ? "bg-gray-600"
+                    : "bg-slate-400"
+                  : "bg-red-600 hover:bg-red-700 shadow-red-500/20 hover:shadow-red-500/30"
+              }`}
+            >
+              {isLoading ? (
+                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              ) : (
+                <Trash2 size={18} />
+              )}
+              {isLoading ? "Eliminando..." : "Eliminar"}
+            </button>
+          </div>
         </div>
       </div>
     </div>

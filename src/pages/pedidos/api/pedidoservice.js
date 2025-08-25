@@ -163,3 +163,19 @@ export const fetchProductos = async () => {
     throw error;
   }
 };
+
+// 👇 AÑADE ESTA NUEVA FUNCIÓN
+export const fetchPedidosPorCliente = async (clienteId) => {
+  try {
+    const token = localStorage.getItem("token");
+    const res = await axios.get(`${VITE_API_URL}/pedidos/cliente/${clienteId}`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    return res.data.data;
+  } catch (error) {
+    console.error("Error al obtener los pedidos del cliente:", error);
+    throw error.response?.data || error;
+  }
+};

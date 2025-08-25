@@ -1,59 +1,79 @@
 "use client"
 
-import { Trash2 } from "lucide-react"
+import { Trash2, X } from "lucide-react"
+import { useTheme } from "../../../components/layout/ThemeContext.jsx" // Ajusta la ruta según tu estructura
 
 const DeleteConfirmModal = ({ title, message, onConfirm, onCancel, isLoading }) => {
+  const { darkMode } = useTheme()
+
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm flex items-center justify-center z-50">
-      <div className="bg-gray-900 rounded-xl shadow-2xl w-full max-w-md border-t-4 border-red-500 animate-fade-in p-6">
-        <div className="flex items-center mb-4">
-          <div className="bg-red-500/20 p-3 rounded-full mr-3">
-            <Trash2 className="h-6 w-6 text-red-500" />
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <div
+        className={`rounded-xl shadow-xl w-full max-w-md transform transition-all border-t-4 border-red-500 ${
+          darkMode ? "bg-gray-800 border border-gray-700" : "bg-white border-slate-200"
+        }`}
+      >
+        {/* Header */}
+        <div className="flex justify-between items-start p-6">
+          <div className="flex items-center">
+            <div className={`p-3 rounded-full mr-4 ${darkMode ? "bg-red-900/30" : "bg-red-100"}`}>
+              <Trash2 className={`h-6 w-6 ${darkMode ? "text-red-400" : "text-red-600"}`} />
+            </div>
+            <div>
+              <h3 className={`text-xl font-semibold ${darkMode ? "text-white" : "text-slate-900"}`}>
+                {title || "Confirmar Eliminación"}
+              </h3>
+            </div>
           </div>
-          <h3 className="text-xl font-bold text-white">{title || "Confirmar Eliminación"}</h3>
-        </div>
-
-        <p className="text-gray-300 mb-6">
-          {message || "¿Estás seguro de que deseas eliminar este elemento? Esta acción no se puede deshacer."}
-        </p>
-
-        <div className="flex justify-end space-x-3">
           <button
             onClick={onCancel}
-            disabled={isLoading}
-            className="px-4 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-600 disabled:opacity-50"
+            className={`p-2 -mt-2 -mr-2 rounded-full transition-all ${
+              darkMode ? "text-gray-400 hover:text-gray-200 hover:bg-gray-700" : "text-slate-500 hover:text-slate-700 hover:bg-slate-100"
+            }`}
+            title="Cerrar"
           >
-            Cancelar
+            <X size={20} />
           </button>
-          <button
-            onClick={onConfirm}
-            disabled={isLoading}
-            className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 flex items-center gap-2 disabled:opacity-50"
-          >
-            {isLoading ? (
-              <>
-                <svg
-                  className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                >
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                  <path
-                    className="opacity-75"
-                    fill="currentColor"
-                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                  ></path>
-                </svg>
-                Eliminando...
-              </>
-            ) : (
-              <>
+        </div>
+
+        {/* Content */}
+        <div className="px-6 pb-6">
+          <p className={`mb-6 ${darkMode ? "text-gray-300" : "text-slate-600"}`}>
+            {message || "¿Estás seguro de que deseas eliminar este elemento? Esta acción no se puede deshacer."}
+          </p>
+
+          {/* Footer */}
+          <div className="flex justify-end space-x-3">
+            <button
+              onClick={onCancel}
+              disabled={isLoading}
+              className={`px-6 py-2.5 rounded-lg border transition-all duration-200 disabled:opacity-50 ${
+                darkMode
+                  ? "border-gray-600 text-gray-300 hover:bg-gray-700 hover:text-white"
+                  : "border-slate-300 text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+              }`}
+            >
+              Cancelar
+            </button>
+            <button
+              onClick={onConfirm}
+              disabled={isLoading}
+              className={`flex items-center justify-center gap-2 px-6 py-2.5 rounded-lg text-white transition-all duration-200 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed ${
+                isLoading
+                  ? darkMode
+                    ? "bg-gray-600"
+                    : "bg-slate-400"
+                  : "bg-red-600 hover:bg-red-700 shadow-red-500/20 hover:shadow-red-500/30"
+              }`}
+            >
+              {isLoading ? (
+                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              ) : (
                 <Trash2 size={18} />
-                Eliminar
-              </>
-            )}
-          </button>
+              )}
+              {isLoading ? "Eliminando..." : "Eliminar"}
+            </button>
+          </div>
         </div>
       </div>
     </div>

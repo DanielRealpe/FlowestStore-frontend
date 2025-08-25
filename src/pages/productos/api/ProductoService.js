@@ -2,38 +2,29 @@ import axios from "axios";
 
 const VITE_API_URL = "http://localhost:3000/api";
 
-// ✅ Crear producto (POST)
-export const createProducto = async (productoData) => {
+// ✅ Crear producto (POST) - Ahora maneja FormData
+export const createProducto = async (formData) => {
+  // Renombrado a formData para claridad
   try {
     const token = localStorage.getItem("token");
-    console.log("Enviando datos al servidor:", productoData);
-    const res = await axios.post(`${VITE_API_URL}/productos`, productoData, {
+    // Cuando envías FormData, axios establece automáticamente
+    // el Content-Type a 'multipart/form-data'
+    const res = await axios.post(`${VITE_API_URL}/productos`, formData, {
       headers: {
         Authorization: `Bearer ${token}`,
+        // 'Content-Type': 'multipart/form-data' // Axios lo hace por ti
       },
     });
-    console.log("Respuesta del servidor:", res.data);
     return res.data.data;
   } catch (error) {
+    // ... (el manejo de errores no cambia)
     if (error.response?.data?.errores) {
-      console.error("Errores del backend:", error.response.data.errores);
-      error.response.data.errores.forEach((err, index) => {
-        console.error(`Error ${index + 1}:`, err);
-      });
       const errorMessage = error.response.data.errores
-        .map((err) =>
-          typeof err === "string" ? err : err.mensaje || JSON.stringify(err)
-        )
+        .map((err) => err.msg || JSON.stringify(err))
         .join(", ");
       error.message = errorMessage || error.message;
     } else if (error.response?.data?.mensaje) {
-      console.error(
-        "Mensaje de error del backend:",
-        error.response.data.mensaje
-      );
       error.message = error.response.data.mensaje;
-    } else {
-      console.error("Error al crear producto:", error.message);
     }
     throw error;
   }
@@ -42,14 +33,14 @@ export const createProducto = async (productoData) => {
 // ✅ Obtener todos los productos (GET)
 export const fetchProductos = async () => {
   try {
-    const token = localStorage.getItem("token")
+    const token = localStorage.getItem("token");
     const res = await axios.get(`${VITE_API_URL}/productos?include=categoria`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
-    })
-    console.log("Productos obtenidos:", res.data.data)
-    return res.data.data
+    });
+    console.log("Productos obtenidos:", res.data.data);
+    return res.data.data;
   } catch (error) {
     console.error("Error al obtener productos", error);
     throw error;
@@ -59,14 +50,17 @@ export const fetchProductos = async () => {
 // ✅ Obtener producto por ID (GET)
 export const fetchProductoById = async (id) => {
   try {
-    const token = localStorage.getItem("token")
-    const res = await axios.get(`${VITE_API_URL}/productos/${id}?include=categoria`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    })
-    console.log("Producto obtenido por ID:", res.data.data)
-    return res.data.data
+    const token = localStorage.getItem("token");
+    const res = await axios.get(
+      `${VITE_API_URL}/productos/${id}?include=categoria`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+    console.log("Producto obtenido por ID:", res.data.data);
+    return res.data.data;
   } catch (error) {
     console.error("Error al obtener producto por ID", error);
     if (error.response?.data?.mensaje) {
@@ -76,24 +70,20 @@ export const fetchProductoById = async (id) => {
   }
 };
 
-// ✅ Actualizar producto por ID (PUT)
-export const updateProducto = async (id, productoData) => {
+// ✅ Actualizar producto por ID (PUT) - Ahora maneja FormData
+export const updateProducto = async (id, formData) => {
+  // Renombrado a formData para claridad
   try {
     const token = localStorage.getItem("token");
-    console.log(`Actualizando producto con ID ${id}:`, productoData);
-    const res = await axios.put(
-      `${VITE_API_URL}/productos/${id}`,
-      productoData,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      }
-    );
-    console.log("Respuesta del servidor:", res.data);
+    const res = await axios.put(`${VITE_API_URL}/productos/${id}`, formData, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        // 'Content-Type': 'multipart/form-data' // Axios lo hace por ti
+      },
+    });
     return res.data.data;
   } catch (error) {
-    console.error("Error al actualizar producto", error);
+    // ... (el manejo de errores no cambia)
     if (error.response?.data?.mensaje) {
       error.message = error.response.data.mensaje;
     }
@@ -183,4 +173,4 @@ export const toggleProductoEstado = async (id, estadoActual) => {
     }
     throw error;
   }
-}
+};

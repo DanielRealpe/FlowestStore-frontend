@@ -18,6 +18,7 @@ import { fetchPedidos, deletePedido, togglePedidoEstado } from "../api/pedidoser
 import CambiarEstadoModal from "../modals/CambiarEstadoModal.jsx"
 import PedidoDetailModal from "../modals/PedidoDetailModal.jsx"
 import { toast } from "react-toastify"
+import { useTheme } from "../../../components/layout/ThemeContext.jsx"
 import {
   DndContext,
   DragOverlay,
@@ -28,7 +29,7 @@ import {
   useSensors,
 } from '@dnd-kit/core';
 import {
-  
+
   SortableContext,
   sortableKeyboardCoordinates,
   verticalListSortingStrategy,
@@ -39,6 +40,7 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 
 const PedidoList = ({ onEdit, onDelete, onRefresh }) => {
+  const { darkMode } = useTheme()
   const [pedidos, setPedidos] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -56,7 +58,6 @@ const PedidoList = ({ onEdit, onDelete, onRefresh }) => {
   const [sortField, setSortField] = useState("fecha_pedido")
   const [sortDirection, setSortDirection] = useState("desc")
   const [searchCategory, setSearchCategory] = useState("all")
-  const [showAdvancedSearch, setShowAdvancedSearch] = useState(false)
 
   const itemsPerPage = 5
 
@@ -79,7 +80,7 @@ const PedidoList = ({ onEdit, onDelete, onRefresh }) => {
       const data = await fetchPedidos()
       setPedidos(data || [])
       setError(null)
-      
+
     } catch (err) {
       setError("Error al cargar los pedidos")
       console.error("Error al cargar pedidos:", err)
@@ -131,16 +132,16 @@ const PedidoList = ({ onEdit, onDelete, onRefresh }) => {
     try {
       setIsUpdating(true)
       await togglePedidoEstado(pedidoToChangeStatus.id, estado)
-      
+
       // Actualizar la lista local
-      setPedidos(prevPedidos => 
-        prevPedidos.map(pedido => 
-          pedido.id === pedidoToChangeStatus.id 
+      setPedidos(prevPedidos =>
+        prevPedidos.map(pedido =>
+          pedido.id === pedidoToChangeStatus.id
             ? { ...pedido, estado }
             : pedido
         )
       )
-      
+
       onRefresh() // Llamar callback si es necesario
       setShowEstadoModal(false)
 
@@ -164,7 +165,6 @@ const PedidoList = ({ onEdit, onDelete, onRefresh }) => {
 
   const handleViewDetail = (pedido) => {
     setShowDetail(pedido)
-    toast.info(`Mostrando detalles del pedido #${pedido.id}`)
   }
 
   // Función para ordenar pedidos
@@ -254,11 +254,11 @@ const PedidoList = ({ onEdit, onDelete, onRefresh }) => {
 
     try {
       await togglePedidoEstado(pedidoId, nuevoEstado)
-      
+
       // Actualizar la lista local
-      setPedidos(prevPedidos => 
-        prevPedidos.map(p => 
-          p.id === pedidoId 
+      setPedidos(prevPedidos =>
+        prevPedidos.map(p =>
+          p.id === pedidoId
             ? { ...p, estado: nuevoEstado }
             : p
         )
@@ -281,10 +281,18 @@ const PedidoList = ({ onEdit, onDelete, onRefresh }) => {
   // Componente para renderizar una fila de la tabla
   const PedidoRow = ({ pedido, onEdit, handleViewDetail, handleDeleteClick, handleChangeStatus, isUpdating }) => {
     const estadoClasses = {
-      pendiente: "bg-yellow-900 text-yellow-300 border-yellow-500",
-      preparacion: "bg-blue-900 text-blue-300 border-blue-500",
-      terminado: "bg-green-900 text-green-300 border-green-500",
-      cancelado: "bg-red-900 text-red-300 border-red-500",
+      pendiente: darkMode
+        ? "bg-yellow-900/30 text-yellow-300 border-yellow-500/50"
+        : "bg-yellow-50 text-yellow-700 border-yellow-200",
+      preparacion: darkMode
+        ? "bg-blue-900/30 text-blue-300 border-blue-500/50"
+        : "bg-blue-50 text-blue-700 border-blue-200",
+      terminado: darkMode
+        ? "bg-green-900/30 text-green-300 border-green-500/50"
+        : "bg-green-50 text-green-700 border-green-200",
+      cancelado: darkMode
+        ? "bg-red-900/30 text-red-300 border-red-500/50"
+        : "bg-red-50 text-red-700 border-red-200"
     }
 
     return (
@@ -330,21 +338,30 @@ const PedidoList = ({ onEdit, onDelete, onRefresh }) => {
           <div className="flex space-x-2">
             <button
               onClick={() => handleViewDetail(pedido)}
-              className="text-blue-400 hover:text-blue-300 transition-colors"
+              className={`p-1 rounded transition-colors ${darkMode
+                  ? 'text-blue-400 hover:text-blue-300 hover:bg-blue-900/20'
+                  : 'text-blue-600 hover:text-blue-500 hover:bg-blue-50'
+                }`}
               title="Ver detalles"
             >
               <Eye size={18} />
             </button>
             <button
               onClick={() => onEdit(pedido)}
-              className="text-orange-500 hover:text-orange-400 transition-colors"
+              className={`p-1 rounded transition-colors ${darkMode
+                  ? 'text-indigo-400 hover:text-indigo-300 hover:bg-indigo-900/20'
+                  : 'text-indigo-600 hover:text-indigo-500 hover:bg-indigo-50'
+                }`}
               title="Editar"
             >
               <Edit size={18} />
             </button>
             <button
               onClick={() => handleDeleteClick(pedido)}
-              className="text-red-500 hover:text-red-400 transition-colors"
+              className={`p-1 rounded transition-colors ${darkMode
+                  ? 'text-red-400 hover:text-red-300 hover:bg-red-900/20'
+                  : 'text-red-600 hover:text-red-500 hover:bg-red-50'
+                }`}
               title="Eliminar"
               disabled={pedido.estado === "terminado"}
             >
@@ -393,13 +410,19 @@ const PedidoList = ({ onEdit, onDelete, onRefresh }) => {
         <div className="flex justify-center gap-4 pt-3 border-t border-gray-600">
           <button
             onClick={() => handleViewDetail(pedido)}
-            className="text-blue-400 hover:text-blue-300"
+            className={`p-1 rounded transition-colors ${darkMode
+                ? 'text-blue-400 hover:text-blue-300 hover:bg-blue-900/20'
+                : 'text-blue-600 hover:text-blue-500 hover:bg-blue-50'
+              }`}
             title="Ver detalles"
           >
             <Eye size={18} />
           </button>
-            {pedido.estado !== "terminado" && (
-            <button onClick={() => onEdit(pedido)} className="text-orange-500 hover:text-orange-400" title="Editar">
+          {pedido.estado !== "terminado" && (
+            <button onClick={() => onEdit(pedido)} className={`p-1 rounded transition-colors ${darkMode
+                ? 'text-indigo-400 hover:text-indigo-300 hover:bg-indigo-900/20'
+                : 'text-indigo-600 hover:text-indigo-500 hover:bg-indigo-50'
+              }`} title="Editar">
               <Edit size={18} />
             </button>
           )}
@@ -414,7 +437,10 @@ const PedidoList = ({ onEdit, onDelete, onRefresh }) => {
       {/* Barra de búsqueda principal */}
       <div className="flex flex-col md:flex-row gap-4">
         <div className="relative flex-grow">
-          <div className="flex items-center bg-gray-900 border border-gray-700 rounded-lg overflow-hidden">
+          <div className={`flex items-center rounded-lg p-2 border ${darkMode
+              ? 'bg-gray-800 border-gray-600'
+              : 'bg-white border-slate-300'
+            }`}>
             <Search className="text-gray-400 ml-3" size={20} />
             <input
               type="text"
@@ -441,42 +467,35 @@ const PedidoList = ({ onEdit, onDelete, onRefresh }) => {
                 const estadoTexto = e.target.value === "todos" ? "todos los estados" : e.target.value
                 toast.info(`Filtro aplicado: ${estadoTexto}`)
               }}
-              className="appearance-none bg-gray-800 border border-gray-700 text-white py-3 px-4 pr-8 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+              className={`appearance-none rounded-lg py-2.5 px-4 pr-8 border transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500/20 ${
+                darkMode 
+                  ? 'bg-gray-800 border-gray-600 text-white' 
+                  : 'bg-white border-slate-300 text-slate-900'
+              }`}
             >
               <option value="todos">Todos los estados</option>
               <option value="pendiente">Pendientes</option>
-              <option value="preparacion">En preparación</option>
               <option value="terminado">Terminados</option>
               <option value="cancelado">Cancelados</option>
             </select>
             <Filter
-              className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none"
+              className={`absolute right-2 top-1/2 transform -translate-y-1/2 ${
+                darkMode ? 'text-gray-400' : 'text-slate-400'
+              } pointer-events-none`}
               size={16}
             />
           </div>
 
           <button
             onClick={() => {
-              setShowAdvancedSearch(!showAdvancedSearch)
-              toast.info(`Búsqueda avanzada ${!showAdvancedSearch ? 'activada' : 'desactivada'}`)
-            }}
-            className={`px-4 py-2 rounded-lg transition-colors border ${
-              showAdvancedSearch 
-                ? 'bg-orange-600 text-white border-orange-500' 
-                : 'bg-gray-800 text-white border-gray-700 hover:bg-gray-700'
-            }`}
-            title="Búsqueda avanzada"
-          >
-            Avanzada
-          </button>
-
-          <button
-            onClick={() => {
               const nuevoModo = viewMode === "table" ? "kanban" : "table"
               setViewMode(nuevoModo)
-              toast.info(`Vista cambiada a: ${nuevoModo === "table" ? "Tabla" : "Kanban"}`)
             }}
-            className="p-2 bg-gray-800 text-white rounded-lg hover:bg-gray-700 transition-colors border border-gray-700 px-4"
+            className={`p-2 px-4 rounded-lg transition-colors border ${
+              darkMode 
+                ? 'bg-gray-800 text-white border-gray-600 hover:bg-gray-700' 
+                : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-50'
+            }`}
             title={viewMode === "table" ? "Ver como Kanban" : "Ver como Tabla"}
           >
             {viewMode === "table" ? "Kanban" : "Tabla"}
@@ -484,92 +503,52 @@ const PedidoList = ({ onEdit, onDelete, onRefresh }) => {
 
           <button
             onClick={() => {
-              loadPedidos() // Cambiar por loadPedidos en lugar de onRefresh
+              loadPedidos()
               toast.info("Actualizando lista de pedidos...")
             }}
-            className="p-2 bg-gray-800 text-white rounded-lg hover:bg-gray-700 transition-colors border border-gray-700"
+            className={`p-2 rounded-lg transition-colors border ${
+              darkMode 
+                ? 'bg-gray-800 text-white border-gray-600 hover:bg-gray-700' 
+                : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-50'
+            }`}
             title="Refrescar"
           >
             <RefreshCw size={20} />
           </button>
         </div>
       </div>
-
-      {/* Opciones de búsqueda avanzada */}
-      {showAdvancedSearch && (
-        <div className="bg-gray-800 p-4 rounded-lg border border-gray-700 animate-fadeIn">
-          <div className="mb-3">
-            <h4 className="text-white font-medium mb-2">Buscar por:</h4>
-            <div className="flex flex-wrap gap-2">
-              <button
-                onClick={() => setSearchCategory("all")}
-                className={`px-3 py-1 rounded-full text-sm ${
-                  searchCategory === "all" ? "bg-orange-600 text-white" : "bg-gray-700 text-gray-300 hover:bg-gray-600"
-                }`}
-              >
-                Todos los campos
-              </button>
-              <button
-                onClick={() => setSearchCategory("cliente")}
-                className={`px-3 py-1 rounded-full text-sm ${
-                  searchCategory === "cliente"
-                    ? "bg-orange-600 text-white"
-                    : "bg-gray-700 text-gray-300 hover:bg-gray-600"
-                }`}
-              >
-                Cliente
-              </button>
-              <button
-                onClick={() => setSearchCategory("producto")}
-                className={`px-3 py-1 rounded-full text-sm ${
-                  searchCategory === "producto"
-                    ? "bg-orange-600 text-white"
-                    : "bg-gray-700 text-gray-300 hover:bg-gray-600"
-                }`}
-              >
-                Producto
-              </button>
-              <button
-                onClick={() => setSearchCategory("id")}
-                className={`px-3 py-1 rounded-full text-sm ${
-                  searchCategory === "id" ? "bg-orange-600 text-white" : "bg-gray-700 text-gray-300 hover:bg-gray-600"
-                }`}
-              >
-                ID
-              </button>
-              <button
-                onClick={() => setSearchCategory("monto")}
-                className={`px-3 py-1 rounded-full text-sm ${
-                  searchCategory === "monto"
-                    ? "bg-orange-600 text-white"
-                    : "bg-gray-700 text-gray-300 hover:bg-gray-600"
-                }`}
-              >
-                Monto
-              </button>
-            </div>
-          </div>
-
-          <div className="text-sm text-gray-400">
-            <p>Resultados encontrados: {filteredPedidos.length}</p>
-          </div>
-        </div>
-      )}
     </div>
   )
 
   // Componente para la paginación
   const Pagination = () => {
-    // Only show pagination if we have more than 5 items
     if (filteredPedidos.length <= 5) return null
 
     return (
-      <div className="flex justify-between items-center mt-4 text-white">
-        <div>
+      <div className={`flex justify-between items-center mt-6 rounded-lg border p-4 ${darkMode
+          ? 'bg-gray-800 border-gray-700'
+          : 'bg-white border-slate-200'
+        }`}>
+        <div className={`text-sm ${darkMode ? 'text-gray-300' : 'text-slate-600'
+          }`}>
           Mostrando {startIndex + 1} - {Math.min(startIndex + itemsPerPage, filteredPedidos.length)} de{" "}
           {filteredPedidos.length} pedidos
         </div>
-        <div className="flex space-x-2">
+        <div className="flex flex-wrap gap-2">
+          <button
+            onClick={() => setCurrentPage(1)}
+            disabled={currentPage === 1}
+            className={`border p-2 rounded transition-colors disabled:opacity-50 ${darkMode
+                ? 'text-white border-gray-600 hover:bg-gray-700 disabled:hover:bg-transparent'
+                : 'text-slate-700 border-slate-300 hover:bg-slate-50 disabled:hover:bg-transparent'
+              }`}
+          >
+            <div className="flex">
+              <ChevronLeft size={18} />
+              <ChevronLeft size={18} />
+            </div>
+          </button>
+
           <PaginationButton
             onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
             disabled={currentPage === 1}
@@ -580,11 +559,12 @@ const PedidoList = ({ onEdit, onDelete, onRefresh }) => {
             <button
               key={page}
               onClick={() => setCurrentPage(page)}
-              className={`px-3 py-1 rounded-md ${
-                currentPage === page
-                  ? "bg-orange-600 text-white border border-orange-500"
-                  : "text-white hover:bg-gray-800 border border-gray-700"
-              }`}
+              className={`px-3 py-1 rounded transition-colors ${currentPage === page
+                  ? "bg-gradient-to-r from-indigo-600 to-purple-600 text-white border border-indigo-500"
+                  : darkMode
+                    ? "text-white border border-gray-600 hover:bg-gray-700"
+                    : "text-slate-700 border border-slate-300 hover:bg-slate-50"
+                }`}
             >
               {page}
             </button>
@@ -595,6 +575,20 @@ const PedidoList = ({ onEdit, onDelete, onRefresh }) => {
             disabled={currentPage === totalPages}
             icon={<ChevronRight size={20} />}
           />
+
+          <button
+            onClick={() => setCurrentPage(totalPages)}
+            disabled={currentPage === totalPages}
+            className={`border p-2 rounded transition-colors disabled:opacity-50 ${darkMode
+                ? 'text-white border-gray-600 hover:bg-gray-700 disabled:hover:bg-transparent'
+                : 'text-slate-700 border-slate-300 hover:bg-slate-50 disabled:hover:bg-transparent'
+              }`}
+          >
+            <div className="flex">
+              <ChevronRight size={18} />
+              <ChevronRight size={18} />
+            </div>
+          </button>
         </div>
       </div>
     )
@@ -605,9 +599,10 @@ const PedidoList = ({ onEdit, onDelete, onRefresh }) => {
     <button
       onClick={onClick}
       disabled={disabled}
-      className={`p-2 rounded-md ${
-        disabled ? "text-gray-500 cursor-not-allowed" : "text-white hover:bg-gray-800 border border-gray-700"
-      }`}
+      className={`border p-2 rounded transition-colors disabled:opacity-50 ${darkMode
+          ? 'text-white border-gray-600 hover:bg-gray-700 disabled:hover:bg-transparent'
+          : 'text-slate-700 border-slate-300 hover:bg-slate-50 disabled:hover:bg-transparent'
+        }`}
     >
       {icon}
     </button>
@@ -616,7 +611,8 @@ const PedidoList = ({ onEdit, onDelete, onRefresh }) => {
   // Componente para encabezado de columna ordenable
   const SortableHeader = ({ field, label }) => (
     <th
-      className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider cursor-pointer hover:text-orange-400"
+      className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider cursor-pointer ${darkMode ? 'text-gray-300 hover:text-gray-200' : 'text-slate-600 hover:text-slate-900'
+        }`}
       onClick={() => {
         if (sortField === field) {
           setSortDirection(sortDirection === "asc" ? "desc" : "asc")
@@ -636,8 +632,11 @@ const PedidoList = ({ onEdit, onDelete, onRefresh }) => {
   // Vista de tabla
   const TableView = () => (
     <div className="overflow-x-auto">
-      <table className="min-w-full bg-gray-900 rounded-lg overflow-hidden border border-gray-800">
-        <thead className="bg-gray-900 text-orange-500 border-b border-orange-900">
+      <table className={`min-w-full divide-y ${darkMode
+          ? 'bg-gray-800 border-gray-700'
+          : 'bg-white border-slate-200'
+        }`}>
+        <thead className={darkMode ? 'bg-gray-700' : 'bg-slate-50'}>
           <tr>
             <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">ID</th>
             <SortableHeader field="cliente" label="Cliente" />
@@ -681,7 +680,7 @@ const PedidoList = ({ onEdit, onDelete, onRefresh }) => {
       transform,
       transition,
       isDragging,
-    } = useSortable({ 
+    } = useSortable({
       id: pedido.id,
       disabled: pedido.estado === 'terminado'
     });
@@ -699,8 +698,8 @@ const PedidoList = ({ onEdit, onDelete, onRefresh }) => {
         {...attributes}
         {...listeners}
         className={`
-          ${pedido.estado === 'terminado' 
-            ? 'cursor-not-allowed opacity-75' 
+          ${pedido.estado === 'terminado'
+            ? 'cursor-not-allowed opacity-75'
             : 'cursor-grab hover:bg-gray-750 active:cursor-grabbing'
           }
           transition-colors duration-200
@@ -712,7 +711,7 @@ const PedidoList = ({ onEdit, onDelete, onRefresh }) => {
   };
 
   // Componente para las columnas del Kanban
-  const DroppableColumn = ({  title, pedidos, color, children }) => {
+  const DroppableColumn = ({ title, pedidos, color, children }) => {
     return (
       <SortableContext items={pedidos.map(p => p.id)} strategy={verticalListSortingStrategy}>
         <div className="bg-gray-900 rounded-lg p-4 min-h-[400px] w-full md:w-64">
@@ -730,7 +729,7 @@ const PedidoList = ({ onEdit, onDelete, onRefresh }) => {
               </p>
             )}
           </div>
-           </div>
+        </div>
       </SortableContext>
     );
   };
@@ -758,7 +757,7 @@ const PedidoList = ({ onEdit, onDelete, onRefresh }) => {
 
     // Determinar el nuevo estado basado en la columna de destino
     let nuevoEstado = null;
-    
+
     // Si se suelta sobre una columna específica
     const columnIds = ['pendiente', 'preparacion', 'terminado', 'cancelado'];
     if (columnIds.includes(overId)) {
@@ -793,7 +792,7 @@ const PedidoList = ({ onEdit, onDelete, onRefresh }) => {
         >
           No hay pedidos pendientes
         </DroppableColumn>
-        
+
         <DroppableColumn
           id="preparacion"
           title="En Preparación"
@@ -802,7 +801,7 @@ const PedidoList = ({ onEdit, onDelete, onRefresh }) => {
         >
           No hay pedidos en preparación
         </DroppableColumn>
-        
+
         <DroppableColumn
           id="terminado"
           title="Terminados"
@@ -811,7 +810,7 @@ const PedidoList = ({ onEdit, onDelete, onRefresh }) => {
         >
           No hay pedidos terminados
         </DroppableColumn>
-        
+
         <DroppableColumn
           id="cancelado"
           title="Cancelados"
@@ -865,8 +864,11 @@ const PedidoList = ({ onEdit, onDelete, onRefresh }) => {
 
       {/* Modal de confirmación de eliminación */}
       {isDeleting && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-gray-800 p-6 rounded-lg border border-gray-700 max-w-md w-full mx-4">
+        <div className="fixed inset-0 bg-gradient-to-br from-black/30 to-black/60 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className={`p-6 rounded-lg border max-w-md w-full mx-4 ${darkMode
+              ? 'bg-gray-800 border-gray-700'
+              : 'bg-white border-slate-200'
+            }`}>
             <h3 className="text-lg font-medium text-white mb-4">Confirmar eliminación</h3>
             <p className="text-gray-300 mb-6">
               ¿Estás seguro de que deseas eliminar el pedido #{pedidoToDelete?.id}?

@@ -29,6 +29,7 @@ import Inventory from "./pages/inventory/inventory"
 import Welcome from "./pages/welcome/welcome"
 import { ThemeProvider, useTheme } from "./components/layout/ThemeContext.jsx"
 import UserProfile from "./pages/perfile/user-profile.js"
+import { MisPedidos } from "./pages/home/PedidoCard.jsx"
 
 // Componente para proteger rutas
 const ProtectedRouteWrapper = ({ children, requiredPermission, requiredRole, allowedTypes = ["usuario"] }) => {
@@ -94,28 +95,35 @@ function AppContent() {
     <div className="flex h-screen">
       {(isAuthenticated && tipo === "usuario" && window.location.pathname !== "/") && <Sidebar />}
       <main
-        className={`flex-1 ${
-          (isAuthenticated && tipo === "usuario" && window.location.pathname !== "/") 
-            ? (isExpanded ? "ml-64" : "ml-20") 
+        className={`flex-1 ${(isAuthenticated && tipo === "usuario" && window.location.pathname !== "/")
+            ? (isExpanded ? "ml-64" : "ml-20")
             : ""
-        } overflow-y-auto transition-all duration-300 ${
-          darkMode 
-            ? 'bg-gray-800 border-gray-700 text-white' 
+          } overflow-y-auto transition-all duration-300 ${darkMode
+            ? 'bg-gray-800 border-gray-700 text-white'
             : 'bg-white border-slate-200 text-slate-900'
-        }`}
+          }`}
       >
         {(isAuthenticated && tipo === "usuario" && window.location.pathname !== "/") && <Navbar />}
-        <div className={`${
-          (isAuthenticated && tipo === "usuario" && window.location.pathname !== "/") 
-            ? "p-4 pt-20" 
+        <div className={`${(isAuthenticated && tipo === "usuario" && window.location.pathname !== "/")
+            ? "p-4 pt-20"
             : ""
-        }`}>
+          }`}>
           <Routes>
             {/* Página principal siempre muestra Home */}
             <Route path="/" element={<Home />} />
 
             {/* Página de Login */}
             <Route path="/login" element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <LoginPage />} />
+
+            {/* 👇 AÑADE LA NUEVA RUTA PROTEGIDA PARA CLIENTES */}
+            <Route
+              path="/mis-pedidos"
+              element={
+                <ProtectedRouteWrapper allowedTypes={["cliente"]}>
+                  <MisPedidos />
+                </ProtectedRouteWrapper>
+              }
+            />
 
             {/* Rutas protegidas del sistema */}
             <Route

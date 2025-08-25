@@ -18,6 +18,7 @@ import UserDetailModal from "../modals/UserDetailModal"
 import { toggleUsuarioEstado, deleteUsuario, fetchRoles } from "../api/usuarioService"
 import { toast } from "react-toastify"
 import DeleteConfirmModal from "../../categorias/modals/DeleteConfirmModal"
+import { useTheme } from "../../../components/layout/ThemeContext.jsx"
 
 const UserList = ({ usuarios, onEdit, onRefresh, isAdmin }) => {
   const [roles, setRoles] = useState([])
@@ -31,6 +32,7 @@ const UserList = ({ usuarios, onEdit, onRefresh, isAdmin }) => {
   const [usuarioToDelete, setUsuarioToDelete] = useState(null)
   const [actionError, setActionError] = useState("")
   const itemsPerPage = 5
+  const { darkMode } = useTheme()
 
   const toggleExpand = (id) => {
     setExpandedId(expandedId === id ? null : id)
@@ -52,16 +54,30 @@ const UserList = ({ usuarios, onEdit, onRefresh, isAdmin }) => {
   // Función para renderizar el rol del usuario
   const renderRol = (rolId, rol) => {
     const rolcito = rol.find((rol) => rol.id == rolId)
+    let colorClass = ""
+
     switch (rolId) {
       case 1:
-        return <span className="bg-purple-900 text-purple-300 px-2 py-1 rounded-full text-xs">Administrador</span>
+        colorClass = "purple"
+        break
       case 2:
-        return <span className="bg-blue-900 text-blue-300 px-2 py-1 rounded-full text-xs">Empleado</span>
+        colorClass = "blue"
+        break
       case 3:
-        return <span className="bg-green-900 text-green-300 px-2 py-1 rounded-full text-xs">Cliente</span>
+        colorClass = "green"
+        break
       default:
-        return <span className="bg-orange-700 text-orange-300 px-2 py-1 rounded-full text-xs">{rolcito?.nombre}</span>
+        colorClass = "gray"
+        break
     }
+
+    return (
+      <span
+        className={`bg-${colorClass}-900 text-${colorClass}-300 px-2 py-1 rounded-full text-xs`}
+      >
+        {rolcito?.nombre || "Desconocido"}
+      </span>
+    )
   }
 
   useEffect(() => {
@@ -184,18 +200,28 @@ const UserList = ({ usuarios, onEdit, onRefresh, isAdmin }) => {
     <div>
       {/* Mensaje de error */}
       {actionError && (
-        <div className="bg-red-900 text-white p-3 rounded-lg mb-4 animate-pulse border border-red-500 text-sm">
+        <div className={`p-3 rounded-lg mb-4 border text-sm ${
+          darkMode 
+            ? 'bg-red-900/20 text-red-300 border-red-500/30' 
+            : 'bg-red-50 text-red-700 border-red-200'
+        }`}>
           {actionError}
         </div>
       )}
 
       {/* Búsqueda */}
-      <div className="flex items-center mb-6 bg-gray-900 border border-gray-700 rounded-lg p-2">
-        <Search className="text-gray-400 ml-2" size={20} />
+      <div className={`flex items-center mb-6 border rounded-lg p-2 ${
+        darkMode 
+          ? 'bg-gray-800 border-gray-600' 
+          : 'bg-white border-slate-300'
+      }`}>
+        <Search className={`ml-2 ${darkMode ? 'text-gray-400' : 'text-slate-400'}`} size={20} />
         <input
           type="text"
           placeholder="Buscar por nombre, email o cédula..."
-          className="w-full bg-transparent border-none text-white focus:outline-none px-3 py-2"
+          className={`w-full bg-transparent border-none focus:outline-none px-3 py-2 ${
+            darkMode ? 'text-white placeholder-gray-400' : 'text-slate-900 placeholder-slate-500'
+          }`}
           value={searchTerm}
           onChange={(e) => {
             setSearchTerm(e.target.value)
@@ -204,7 +230,11 @@ const UserList = ({ usuarios, onEdit, onRefresh, isAdmin }) => {
         />
         <button
           onClick={handleRefresh}
-          className="p-2 text-gray-400 hover:text-orange-500 transition-colors"
+          className={`p-2 rounded transition-colors ${
+            darkMode 
+              ? 'text-gray-400 hover:text-indigo-300 hover:bg-indigo-900/20' 
+              : 'text-slate-400 hover:text-indigo-600 hover:bg-indigo-50'
+          }`}
           title="Refrescar"
         >
           <RefreshCw size={20} />
@@ -214,24 +244,40 @@ const UserList = ({ usuarios, onEdit, onRefresh, isAdmin }) => {
       {/* Tabla de usuarios */}
       <div className="overflow-x-auto">
         <table className="min-w-full divide-y divide-gray-800">
-          <thead className="bg-gray-800">
+          <thead className={darkMode ? 'bg-gray-700' : 'bg-slate-50'}>
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Nombre</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Rol</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Estado</th>
-              <th className="px-6 py-3 text-right text-xs font-medium text-gray-400 uppercase tracking-wider">
+              <th className={`px-6 py-3 text-left text-xs font-medium uppercase ${
+                darkMode ? 'text-gray-300' : 'text-slate-600'
+              }`}>Nombre</th>
+              <th className={`px-6 py-3 text-left text-xs font-medium uppercase ${
+                darkMode ? 'text-gray-300' : 'text-slate-600'
+              }`}>Rol</th>
+              <th className={`px-6 py-3 text-left text-xs font-medium uppercase ${
+                darkMode ? 'text-gray-300' : 'text-slate-600'
+              }`}>Estado</th>
+              <th className={`px-6 py-3 text-right text-xs font-medium uppercase ${
+                darkMode ? 'text-gray-300' : 'text-slate-600'
+              }`}>
                 Acciones
               </th>
             </tr>
           </thead>
-          <tbody className="bg-gray-900 divide-y divide-gray-800">
+          <tbody className={`divide-y ${
+            darkMode 
+              ? 'bg-gray-800 divide-gray-700' 
+              : 'bg-white divide-slate-200'
+          }`}>
             {loading == false ? (
               paginatedUsuarios.length > 0 ? (
                 paginatedUsuarios.map((usuario) => (
-                  <tr key={usuario.id} className="hover:bg-gray-800/50 transition-colors">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-white">
+                  <tr key={usuario.id} className={`transition-colors ${
+                    darkMode ? 'hover:bg-gray-700' : 'hover:bg-slate-50'
+                  }`}>
+                    <td className={`px-6 py-4 whitespace-nowrap text-sm font-medium ${
+                      darkMode ? 'text-white' : 'text-slate-900'
+                    }`}>
                       <div className="flex items-center">
-                        <User className="h-4 w-4 mr-2 text-orange-400" />
+                        <User className="h-4 w-4 mr-2 text-indigo-400" />
                         {usuario.nombre}
                       </div>
                     </td>
@@ -245,10 +291,14 @@ const UserList = ({ usuarios, onEdit, onRefresh, isAdmin }) => {
                       <button
                         onClick={() => handleToggleEstado(usuario)}
                         disabled={!isAdmin || loadingStatus === usuario.id}
-                        className={`px-2 py-1 inline-flex items-center text-xs font-semibold rounded-full ${
+                        className={`px-3 py-1 inline-flex items-center text-xs font-semibold rounded-full border transition-colors ${
                           usuario.estado === "activo"
-                            ? "bg-green-900 text-green-300 border border-green-500 hover:bg-green-800"
-                            : "bg-red-900 text-red-300 border border-red-500 hover:bg-red-800"
+                            ? darkMode 
+                              ? "bg-green-900/30 text-green-300 border-green-500/50 hover:bg-green-900/50"
+                              : "bg-green-50 text-green-700 border-green-200 hover:bg-green-100"
+                            : darkMode
+                              ? "bg-red-900/30 text-red-300 border-red-500/50 hover:bg-red-900/50"
+                              : "bg-red-50 text-red-700 border-red-200 hover:bg-red-100"
                         } ${!isAdmin || loadingStatus === usuario.id ? "opacity-60 cursor-not-allowed" : "cursor-pointer"}`}
                         title={
                           isAdmin
@@ -290,7 +340,11 @@ const UserList = ({ usuarios, onEdit, onRefresh, isAdmin }) => {
                       <div className="flex justify-end items-center space-x-2">
                         <button
                           onClick={() => handleViewDetails(usuario)}
-                          className="text-blue-400 hover:text-blue-300 p-1"
+                          className={`p-1 rounded transition-colors ${
+                            darkMode 
+                              ? 'text-blue-400 hover:text-blue-300 hover:bg-blue-900/20' 
+                              : 'text-blue-600 hover:text-blue-500 hover:bg-blue-50'
+                          }`}
                           title="Ver detalles"
                         >
                           <Eye size={18} />
@@ -300,14 +354,22 @@ const UserList = ({ usuarios, onEdit, onRefresh, isAdmin }) => {
                           <>
                             <button
                               onClick={() => onEdit(usuario)}
-                              className="text-gray-400 hover:text-orange-400 p-1"
+                              className={`p-1 rounded transition-colors ${
+                                darkMode 
+                                  ? 'text-indigo-400 hover:text-indigo-300 hover:bg-indigo-900/20' 
+                                  : 'text-indigo-600 hover:text-indigo-500 hover:bg-indigo-50'
+                              }`}
                               title="Editar"
                             >
                               <Edit size={18} />
                             </button>
                             <button
                               onClick={() => handleDeleteClick(usuario)}
-                              className="text-gray-400 hover:text-red-500 p-1"
+                              className={`p-1 rounded transition-colors ${
+                                darkMode 
+                                  ? 'text-red-400 hover:text-red-300 hover:bg-red-900/20' 
+                                  : 'text-red-600 hover:text-red-500 hover:bg-red-50'
+                              }`}
                               title="Eliminar"
                             >
                               <Trash2 size={18} />
@@ -320,14 +382,18 @@ const UserList = ({ usuarios, onEdit, onRefresh, isAdmin }) => {
                 ))
               ) : (
                 <tr>
-                  <td colSpan="4" className="px-6 py-4 text-center text-gray-400">
+                  <td colSpan="4" className={`px-6 py-4 text-center ${
+                    darkMode ? 'text-gray-400' : 'text-slate-500'
+                  }`}>
                     No se encontraron usuarios
                   </td>
                 </tr>
               )
             ) : (
               <tr>
-                <td colSpan="4" className="px-6 py-4 text-center text-gray-400">
+                <td colSpan="4" className={`px-6 py-4 text-center ${
+                  darkMode ? 'text-gray-400' : 'text-slate-500'
+                }`}>
                   Cargando...
                 </td>
               </tr>
@@ -338,9 +404,13 @@ const UserList = ({ usuarios, onEdit, onRefresh, isAdmin }) => {
 
       {/* Paginación */}
       {totalPages > 1 && (
-        <div className="mt-6 bg-gray-800 rounded-lg border border-gray-700 p-4">
+        <div className={`mt-6 rounded-lg border p-4 ${
+          darkMode 
+            ? 'bg-gray-800 border-gray-700' 
+            : 'bg-white border-slate-200'
+        }`}>
           <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
-            <div className="text-sm text-gray-300">
+            <div className={`text-sm ${darkMode ? 'text-gray-300' : 'text-slate-600'}`}>
               Mostrando {startIndex + 1} - {Math.min(startIndex + itemsPerPage, filteredUsuarios.length)} de{" "}
               {filteredUsuarios.length} usuarios
             </div>
@@ -348,7 +418,11 @@ const UserList = ({ usuarios, onEdit, onRefresh, isAdmin }) => {
               <button
                 onClick={() => setCurrentPage(1)}
                 disabled={currentPage === 1}
-                className="text-white border border-gray-600 p-2 rounded disabled:opacity-50"
+                className={`border p-2 rounded transition-colors disabled:opacity-50 ${
+                  darkMode 
+                    ? 'text-white border-gray-600 hover:bg-gray-700 disabled:hover:bg-transparent' 
+                    : 'text-slate-700 border-slate-300 hover:bg-slate-50 disabled:hover:bg-transparent'
+                }`}
               >
                 <ChevronLeft size={18} />
                 <ChevronLeft size={18} />
@@ -356,7 +430,11 @@ const UserList = ({ usuarios, onEdit, onRefresh, isAdmin }) => {
               <button
                 onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
                 disabled={currentPage === 1}
-                className="text-white border border-gray-600 p-2 rounded disabled:opacity-50"
+                className={`border p-2 rounded transition-colors disabled:opacity-50 ${
+                  darkMode 
+                    ? 'text-white border-gray-600 hover:bg-gray-700 disabled:hover:bg-transparent' 
+                    : 'text-slate-700 border-slate-300 hover:bg-slate-50 disabled:hover:bg-transparent'
+                }`}
               >
                 <ChevronLeft size={20} />
               </button>
@@ -364,10 +442,12 @@ const UserList = ({ usuarios, onEdit, onRefresh, isAdmin }) => {
                 <button
                   key={i + 1}
                   onClick={() => setCurrentPage(i + 1)}
-                  className={`px-3 py-1 rounded ${
+                  className={`px-3 py-1 rounded transition-colors ${
                     currentPage === i + 1
-                      ? "bg-orange-600 text-white border border-orange-500"
-                      : "text-white border border-gray-600 hover:bg-gray-700"
+                      ? "bg-gradient-to-r from-indigo-600 to-purple-600 text-white border border-indigo-500"
+                      : darkMode
+                        ? "text-white border border-gray-600 hover:bg-gray-700"
+                        : "text-slate-700 border border-slate-300 hover:bg-slate-50"
                   }`}
                 >
                   {i + 1}
@@ -376,14 +456,22 @@ const UserList = ({ usuarios, onEdit, onRefresh, isAdmin }) => {
               <button
                 onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
                 disabled={currentPage === totalPages}
-                className="text-white border border-gray-600 p-2 rounded disabled:opacity-50"
+                className={`border p-2 rounded transition-colors disabled:opacity-50 ${
+                  darkMode 
+                    ? 'text-white border-gray-600 hover:bg-gray-700 disabled:hover:bg-transparent' 
+                    : 'text-slate-700 border-slate-300 hover:bg-slate-50 disabled:hover:bg-transparent'
+                }`}
               >
                 <ChevronRight size={20} />
               </button>
               <button
                 onClick={() => setCurrentPage(totalPages)}
                 disabled={currentPage === totalPages}
-                className="text-white border border-gray-600 p-2 rounded disabled:opacity-50"
+                className={`border p-2 rounded transition-colors disabled:opacity-50 ${
+                  darkMode 
+                    ? 'text-white border-gray-600 hover:bg-gray-700 disabled:hover:bg-transparent' 
+                    : 'text-slate-700 border-slate-300 hover:bg-slate-50 disabled:hover:bg-transparent'
+                }`}
               >
                 <ChevronRight size={18} />
                 <ChevronRight size={18} />

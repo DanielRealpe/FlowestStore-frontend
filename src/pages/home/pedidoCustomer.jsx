@@ -41,19 +41,55 @@ export default function PedidoCustomerModal({ open, onClose, onPedidoGuardado })
         // eslint-disable-next-line
     }, [showForm])
 
-    // Si el usuario está autenticado, precargar datos en el formulario
+    // Efecto para precargar datos y decidir el paso inicial
     useEffect(() => {
-        console.log("isAuthenticated:", isAuthenticated, "user:", user)
-        if (isAuthenticated && user) {
-            setForm(prev => ({
-                ...prev,
-                nombreCompleto: user.nombreCompleto || user.nombre || "",
-                documentoIdentidad: user.documentoIdentidad || user.cedula || "",
-                telefono: user.telefono || "",
-                email: user.correoElectronico || user.email || "",
-            }))
+        console.log("USER CARECHIMBA: ", user)
+        if (open) {
+            setShowForm(true)
+            setErrors({})
+            setSubmitError("")
+
+            if (isAuthenticated && user) {
+                const userData = {
+                    nombreCompleto: user.nombreCompleto || user.nombre || "",
+                    documentoIdentidad: user.documentoIdentidad || user.cedula || "",
+                    telefono: user.telefono || "",
+                    email: user.correoElectronico || user.email || "",
+                    // 👇 Asumimos que el cliente puede tener una dirección guardada
+                    direccion_envio: user.direccion || "",
+                }
+                setForm(userData)
+
+                // 👇 ¡LA LÓGICA CLAVE!
+                // Si todos los campos necesarios (incluida la dirección) ya están,
+                // saltamos directamente al paso de confirmación.
+                if (
+                    userData.nombreCompleto &&
+                    userData.documentoIdentidad &&
+                    userData.telefono &&
+                    userData.email &&
+                    userData.direccion_envio
+                ) {
+                    setCurrentStep(2)
+                } else {
+                    setCurrentStep(1)
+                }
+            } else {
+                // Si no está autenticado (aunque no debería llegar aquí con la lógica actual),
+                // reseteamos el formulario y empezamos en el paso 1.
+                setForm({
+                    nombreCompleto: "",
+                    documentoIdentidad: "",
+                    direccion_envio: "",
+                    telefono: "",
+                    email: "",
+                })
+                setCurrentStep(1)
+            }
+        } else {
+            setShowForm(false)
         }
-    }, [isAuthenticated, user])
+    }, [open, isAuthenticated, user])
 
     useEffect(() => {
         setShowForm(open)
@@ -97,10 +133,7 @@ export default function PedidoCustomerModal({ open, onClose, onPedidoGuardado })
         try {
             const pedidoData = {
                 direccion_envio: form.direccion_envio,
-                documentoIdentidad: form.documentoIdentidad,
-                nombreCompleto: form.nombreCompleto,
-                telefono: form.telefono,
-                email: form.email,
+                id_cliente: user.id,
                 productos: state.items.map((item) => ({
                     id_producto: item.id,
                     cantidad: item.cantidad,
@@ -212,13 +245,14 @@ export default function PedidoCustomerModal({ open, onClose, onPedidoGuardado })
                                         </label>
                                         <input
                                             type="text"
-                                            className={`w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all ${errors.nombreCompleto
-                                                    ? "border-red-300 bg-red-50"
-                                                    : "border-slate-300 hover:border-slate-400"
+                                            className={`text-black w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all ${errors.nombreCompleto
+                                                ? "border-red-300 bg-red-50"
+                                                : "border-slate-300 hover:border-slate-400"
                                                 }`}
                                             value={form.nombreCompleto}
                                             onChange={e => setForm({ ...form, nombreCompleto: e.target.value })}
                                             placeholder="Ingresa tu nombre completo"
+                                            readOnly
                                             autoComplete="name"
                                         />
                                         {errors.nombreCompleto && (
@@ -237,13 +271,14 @@ export default function PedidoCustomerModal({ open, onClose, onPedidoGuardado })
                                         </label>
                                         <input
                                             type="text"
-                                            className={`w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all ${errors.documentoIdentidad
-                                                    ? "border-red-300 bg-red-50"
-                                                    : "border-slate-300 hover:border-slate-400"
+                                            className={`text-black w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all ${errors.documentoIdentidad
+                                                ? "border-red-300 bg-red-50"
+                                                : "border-slate-300 hover:border-slate-400"
                                                 }`}
                                             value={form.documentoIdentidad}
                                             onChange={e => setForm({ ...form, documentoIdentidad: e.target.value })}
                                             placeholder="Número de documento"
+                                            readOnly
                                             autoComplete="off"
                                         />
                                         {errors.documentoIdentidad && (
@@ -262,14 +297,15 @@ export default function PedidoCustomerModal({ open, onClose, onPedidoGuardado })
                                         </label>
                                         <input
                                             type="tel"
-                                            className={`w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all ${errors.telefono
-                                                    ? "border-red-300 bg-red-50"
-                                                    : "border-slate-300 hover:border-slate-400"
+                                            className={`text-black w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all ${errors.telefono
+                                                ? "border-red-300 bg-red-50"
+                                                : "border-slate-300 hover:border-slate-400"
                                                 }`}
                                             value={form.telefono}
                                             onChange={e => setForm({ ...form, telefono: e.target.value })}
                                             placeholder="3001234567"
                                             autoComplete="tel"
+                                            readOnly
                                             maxLength={10}
                                         />
                                         {errors.telefono && (
@@ -288,14 +324,15 @@ export default function PedidoCustomerModal({ open, onClose, onPedidoGuardado })
                                         </label>
                                         <input
                                             type="email"
-                                            className={`w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all ${errors.email
-                                                    ? "border-red-300 bg-red-50"
-                                                    : "border-slate-300 hover:border-slate-400"
+                                            className={`text-black w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all ${errors.email
+                                                ? "border-red-300 bg-red-50"
+                                                : "border-slate-300 hover:border-slate-400"
                                                 }`}
                                             value={form.email}
                                             onChange={e => setForm({ ...form, email: e.target.value })}
                                             placeholder="cliente@email.com"
                                             autoComplete="email"
+                                            readOnly
                                         />
                                         {errors.email && (
                                             <p className="text-red-600 text-sm mt-1 flex items-center space-x-1">
@@ -314,9 +351,9 @@ export default function PedidoCustomerModal({ open, onClose, onPedidoGuardado })
                                     </label>
                                     <input
                                         type="text"
-                                        className={`w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all ${errors.direccion_envio
-                                                ? "border-red-300 bg-red-50"
-                                                : "border-slate-300 hover:border-slate-400"
+                                        className={`text-black w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all ${errors.direccion_envio
+                                            ? "border-red-300 bg-red-50"
+                                            : "border-slate-300 hover:border-slate-400"
                                             }`}
                                         value={form.direccion_envio}
                                         onChange={e => setForm({ ...form, direccion_envio: e.target.value })}
@@ -362,6 +399,7 @@ export default function PedidoCustomerModal({ open, onClose, onPedidoGuardado })
                                     </div>
                                     <div className="md:col-span-2">
                                         <span className="text-slate-500">Dirección:</span>
+                                        {/* 👇 Asegúrate de que el campo del formulario se llame direccion_envio */}
                                         <p className="font-medium text-slate-900">{form.direccion_envio}</p>
                                     </div>
                                 </div>

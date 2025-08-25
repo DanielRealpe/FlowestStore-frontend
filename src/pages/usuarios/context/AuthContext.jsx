@@ -264,8 +264,9 @@ export function AuthProvider({ children }) {
       permisosLoaded.current = false
       authCheckComplete.current = false
       if(tipo === "usuario") {
-        navigateTo("/login")
+        navigateTo("/")
       } else if (tipo === "cliente") {
+        await logoutUsuario()
         navigateTo("/")
       }
     } catch (error) {

@@ -438,16 +438,17 @@ const PedidoForm = ({ pedido, onClose, onSave }) => {
               )}
             </div>
 
-            {cliente && cliente.nombreCompleto !== "DOMICILIO" && (
+            {clienteSearch !== "DOMICILIO" && (
               <FormField
                 type="text"
-                name="direccion_envio"
-                label="Dirección de Envío"
-                value={formData.direccion_envio}
-                error={errors.direccion_envio}
-                onChange={handleChange}
-              />
-            )}
+    name="direccion_envio"
+    label="Dirección de Envío"
+    value={formData.direccion_envio}
+    error={errors.direccion_envio}
+    onChange={handleChange}
+  />
+)}
+
           </div>  
 
           {/* Sección Agregar Productos */}

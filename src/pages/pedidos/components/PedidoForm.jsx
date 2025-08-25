@@ -438,15 +438,17 @@ const PedidoForm = ({ pedido, onClose, onSave }) => {
               )}
             </div>
 
-            <FormField
-              type="text"
-              name="direccion_envio"
-              label="Dirección de Envío"
-              value={formData.direccion_envio}
-              error={errors.direccion_envio}
-              onChange={handleChange}
-            />
-          </div>
+            {cliente.nombreCompleto !== "DOMICILIO" && (
+              <FormField
+                type="text"
+                name="direccion_envio"
+                label="Dirección de Envío"
+                value={formData.direccion_envio}
+                error={errors.direccion_envio}
+                onChange={handleChange}
+              />
+            )}
+
 
           {/* Sección Agregar Productos */}
           <div className={`p-4 rounded-lg border mb-6 ${

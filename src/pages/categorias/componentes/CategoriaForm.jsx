@@ -55,8 +55,13 @@ const CategoriaForm = ({ categoria, onClose, onSave }) => {
   }
 
   const validateForm = () => {
-    const newErrors = {}
-    if (!formData.nombre.trim() || formData.nombre.length==0) {
+    const regex = /^[A-Za-z]+$/;
+    const newErrors = {};
+    if (!regex.test(formData.nombre)) {
+      newErrors.nombre = "No le metiste con cojones";
+    }
+
+    if (!formData.nombre.trim()) {
       newErrors.nombre = "El nombre es obligatorio"
     } else if (formData.nombre.trim().length < 3) {
       newErrors.nombre = "El nombre debe tener al menos 3 caracteres"

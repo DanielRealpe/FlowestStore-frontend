@@ -438,7 +438,7 @@ const PedidoForm = ({ pedido, onClose, onSave }) => {
               )}
             </div>
 
-            {cliente.nombreCompleto !== "DOMICILIO" && (
+            {cliente && cliente.nombreCompleto !== "DOMICILIO" && (
               <FormField
                 type="text"
                 name="direccion_envio"

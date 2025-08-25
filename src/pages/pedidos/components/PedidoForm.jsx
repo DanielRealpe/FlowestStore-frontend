@@ -438,9 +438,9 @@ const PedidoForm = ({ pedido, onClose, onSave }) => {
               )}
             </div>
 
-            {clienteSearch !== "DOMICILIO" && (
-              <FormField
-                type="text"
+{!/^\s*domicilio\b/i.test(clienteSearch) && (
+  <FormField
+    type="text"
     name="direccion_envio"
     label="Dirección de Envío"
     value={formData.direccion_envio}

@@ -55,7 +55,7 @@ const CategoriaForm = ({ categoria, onClose, onSave }) => {
   }
 
   const validateForm = () => {
-    const regex = /^[A-Za-z/s]+$/;
+    const regex = /^[A-Za-z\s]+$/;
     const newErrors = {};
     if (!regex.test(formData.nombre)) {
       newErrors.nombre = "No le metiste con cojones";

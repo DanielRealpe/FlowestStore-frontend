@@ -448,7 +448,7 @@ const PedidoForm = ({ pedido, onClose, onSave }) => {
                 onChange={handleChange}
               />
             )}
-
+          </div>  
 
           {/* Sección Agregar Productos */}
           <div className={`p-4 rounded-lg border mb-6 ${
